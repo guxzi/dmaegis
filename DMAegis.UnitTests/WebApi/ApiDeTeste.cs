@@ -17,6 +17,7 @@ public class ApiDeTeste
 
     public Mock<IUsuarioService> Usuarios { get; } = new();
     public Mock<ICampanhaService> Campanhas { get; } = new();
+    public Mock<IRegistroService> Registros { get; } = new();
 
     public HttpClient CriarCliente()
     {
@@ -25,6 +26,7 @@ public class ApiDeTeste
             {
                 services.AddScoped(_ => Usuarios.Object);
                 services.AddScoped(_ => Campanhas.Object);
+                services.AddScoped(_ => Registros.Object);
             }));
         return factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
     }

@@ -19,11 +19,18 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
         services.AddScoped<ISistemaRepository, SistemaRepository>();
         services.AddScoped<ICampanhaRepository, CampanhaRepository>();
+        services.AddScoped<ITipoRegistroRepository, TipoRegistroRepository>();
+        services.AddScoped<IModeloAtributoRepository, ModeloAtributoRepository>();
+        services.AddScoped<IRegistroRepository, RegistroRepository>();
+        services.AddScoped<IAtributoRegistroRepository, AtributoRegistroRepository>();
+        services.AddScoped<ITagRepository, TagRepository>();
+        services.AddScoped<IRegistroTagRepository, RegistroTagRepository>();
 
         // Services
         services.AddScoped<ISaudeService, SaudeService>();
         services.AddScoped<IUsuarioService, UsuarioService>();
         services.AddScoped<ICampanhaService, CampanhaService>();
+        services.AddScoped<IRegistroService, RegistroService>();
 
         // Validators (todos os AbstractValidator deste projeto)
         services.AddValidatorsFromAssemblyContaining<LoginValidator>();
