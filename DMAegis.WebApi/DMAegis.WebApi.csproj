@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetEnv" Version="3.2.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="11.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DMAegis.Model\DMAegis.Model.csproj" />
+    <ProjectReference Include="..\DMAegis.Repository\DMAegis.Repository.csproj" />
+    <ProjectReference Include="..\DMAegis.Services\DMAegis.Services.csproj" />
+    <ProjectReference Include="..\DMAegis.WebApi.ApiModels\DMAegis.WebApi.ApiModels.csproj" />
+  </ItemGroup>
+
+</Project>

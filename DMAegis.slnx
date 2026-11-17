@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="DMAegis.Model/DMAegis.Model.csproj" />
+  <Project Path="DMAegis.Repository/DMAegis.Repository.csproj" />
+  <Project Path="DMAegis.Services/DMAegis.Services.csproj" />
+  <Project Path="DMAegis.UnitTests/DMAegis.UnitTests.csproj" />
+  <Project Path="DMAegis.WebApi.ApiModels/DMAegis.WebApi.ApiModels.csproj" />
+  <Project Path="DMAegis.WebApi/DMAegis.WebApi.csproj" />
+</Solution>
