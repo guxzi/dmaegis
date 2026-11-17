@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Diagnostics;
 namespace DMAegis.WebApi.Middlewares;
 
 /// <summary>
-/// Converte exceções no envelope padrão. Regra de negócio → 400 com o código dela;
+/// Converte exceções no envelope padrão. Regra de negócio → status de StatusErroNegocio com o código dela;
 /// qualquer outra → 500 com mensagem genérica (o detalhe vai só para o log).
 /// </summary>
 public class GlobalExceptionHandler : IExceptionHandler
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         if (exception is BusinessRuleException regra)
         {
-            httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+            httpContext.Response.StatusCode = StatusErroNegocio.Obter(regra.Code);
             envelope = ApiResponse<object>.Erro(regra.Code, regra.Mensagem);
         }
         else

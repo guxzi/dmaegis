@@ -48,4 +48,12 @@ public class GlobalExceptionHandlerTests
         Assert.Equal(99, envelope.ResponseCode);
         Assert.Equal("Regra X", envelope.ErrorMessage);
     }
+
+    [Fact]
+    public async Task TryHandleAsync_EmailJaCadastrado_Responde409()
+    {
+        var (contexto, _) = await ExecutarAsync(new BusinessRuleException(BusinessErrors.EmailJaCadastrado));
+
+        Assert.Equal(409, contexto.Response.StatusCode);
+    }
 }
