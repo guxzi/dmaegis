@@ -98,7 +98,10 @@ export default function CampanhaDetalhe() {
         {campanha.descricao
           ? <p style={{ whiteSpace: 'pre-line' }}>{campanha.descricao}</p>
           : <p className="text-secondary fst-italic">Sem descrição.</p>}
-        <p className="text-secondary small mt-4">O caderno e as sessões chegam nas próximas etapas.</p>
+        <div className="d-flex gap-2 mt-4">
+          <Link to={`/campanhas/${campanha.id}/caderno`} className="btn btn-primary">Abrir caderno</Link>
+        </div>
+        <p className="text-secondary small mt-3">As sessões e o escudo chegam nas próximas etapas.</p>
       </>
     );
   }
