@@ -94,8 +94,7 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<ApiResponse<UsuarioResponseApiModel>>> Eu()
     {
-        var id = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        var usuario = await _usuarioService.ObterAsync(id);
+        var usuario = await _usuarioService.ObterAsync(User.ObterIdUsuario());
 
         if (usuario is null)
         {
