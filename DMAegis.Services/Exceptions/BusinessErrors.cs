@@ -2,8 +2,12 @@ namespace DMAegis.Services.Exceptions;
 
 /// <summary>
 /// Erros de negócio: (código, mensagem padrão). Códigos sequenciais a partir de 2
-/// (0 = sucesso e 1 = erro genérico, ver ResponseCodes). Os primeiros entram na etapa 2.
+/// (0 = sucesso e 1 = erro genérico, ver ResponseCodes). Código novo = próximo número livre.
+/// O status HTTP de cada código fica em DMAegis.WebApi/Middlewares/StatusErroNegocio.cs.
 /// </summary>
 public static class BusinessErrors
 {
+    public static readonly (int Code, string DefaultMessage) DadosInvalidos = (2, "Dados inválidos.");
+    public static readonly (int Code, string DefaultMessage) EmailJaCadastrado = (3, "Este e-mail já está cadastrado.");
+    public static readonly (int Code, string DefaultMessage) CredenciaisInvalidas = (4, "E-mail ou senha inválidos.");
 }
