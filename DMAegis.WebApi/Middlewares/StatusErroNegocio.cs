@@ -13,6 +13,7 @@ public static class StatusErroNegocio
         [BusinessErrors.EmailJaCadastrado.Code] = StatusCodes.Status409Conflict,
         [BusinessErrors.CredenciaisInvalidas.Code] = StatusCodes.Status401Unauthorized,
         [BusinessErrors.CampanhaNaoEncontrada.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.RegistroNaoEncontrado.Code] = StatusCodes.Status404NotFound,
     };
 
     public static int Obter(int code) =>

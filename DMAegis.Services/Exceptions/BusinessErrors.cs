@@ -12,4 +12,6 @@ public static class BusinessErrors
     public static readonly (int Code, string DefaultMessage) CredenciaisInvalidas = (4, "E-mail ou senha inválidos.");
     public static readonly (int Code, string DefaultMessage) CampanhaNaoEncontrada = (5, "Campanha não encontrada.");
     public static readonly (int Code, string DefaultMessage) SistemaInvalido = (6, "Sistema inválido.");
+    public static readonly (int Code, string DefaultMessage) RegistroNaoEncontrado = (7, "Registro não encontrado.");
+    public static readonly (int Code, string DefaultMessage) TipoRegistroInvalido = (8, "Tipo de registro inválido.");
 }
