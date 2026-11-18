@@ -1,0 +1,452 @@
+/*
+ * DMAegis — identidade visual
+ * Magia cósmica e gravitacional: espaço profundo, azul cobalto, violeta, constelações e escudos.
+ * Bootstrap no modo escuro (data-bs-theme="dark" no <html>) com as variáveis trocadas aqui.
+ * Paleta e regras: AGENTS.md, seção "Identidade visual".
+ */
+
+:root,
+:root[data-bs-theme='dark'] {
+  /* Tokens do DMAegis */
+  --dm-espaco: #070b1f;
+  --dm-espaco-rgb: 7, 11, 31;
+  --dm-superficie: #0f1636;
+  --dm-superficie-rgb: 15, 22, 54;
+  --dm-superficie-alta: #161f4a;
+  --dm-borda: rgba(122, 140, 255, 0.18);
+  --dm-borda-forte: rgba(139, 92, 246, 0.45);
+  --dm-cobalto: #2f5bff;
+  --dm-cobalto-rgb: 47, 91, 255;
+  --dm-cobalto-claro: #4a70ff;
+  --dm-violeta: #8b5cf6;
+  --dm-violeta-rgb: 139, 92, 246;
+  --dm-estrela: #c4b5fd;
+  --dm-texto: #e6e9ff;
+  --dm-texto-rgb: 230, 233, 255;
+  --dm-texto-suave: #9aa3d4;
+  --dm-gradiente: linear-gradient(135deg, var(--dm-cobalto) 0%, var(--dm-violeta) 100%);
+  --dm-brilho: 0 0 0 1px var(--dm-borda), 0 8px 32px rgba(3, 6, 24, 0.55), 0 0 24px rgba(var(--dm-violeta-rgb), 0.08);
+
+  /* Bootstrap */
+  --bs-font-sans-serif: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-body-bg: var(--dm-espaco);
+  --bs-body-bg-rgb: var(--dm-espaco-rgb);
+  --bs-body-color: var(--dm-texto);
+  --bs-body-color-rgb: var(--dm-texto-rgb);
+  --bs-emphasis-color: #ffffff;
+  --bs-heading-color: #eef0ff;
+  --bs-secondary-color: var(--dm-texto-suave);
+  --bs-secondary-bg: var(--dm-superficie-alta);
+  --bs-tertiary-bg: var(--dm-superficie);
+  --bs-tertiary-bg-rgb: var(--dm-superficie-rgb);
+  --bs-border-color: var(--dm-borda);
+  --bs-border-color-translucent: var(--dm-borda);
+  --bs-primary: var(--dm-cobalto);
+  --bs-primary-rgb: var(--dm-cobalto-rgb);
+  --bs-secondary: #4b5381;
+  --bs-secondary-rgb: 75, 83, 129;
+  --bs-success: #34d399;
+  --bs-success-rgb: 52, 211, 153;
+  --bs-warning: #fbbf24;
+  --bs-warning-rgb: 251, 191, 36;
+  --bs-danger: #f87171;
+  --bs-danger-rgb: 248, 113, 113;
+  --bs-info: #60a5fa;
+  --bs-info-rgb: 96, 165, 250;
+  --bs-primary-text-emphasis: #a9bbff;
+  --bs-primary-bg-subtle: rgba(var(--dm-cobalto-rgb), 0.15);
+  --bs-primary-border-subtle: rgba(var(--dm-cobalto-rgb), 0.4);
+  --bs-link-color: #93a8ff;
+  --bs-link-color-rgb: 147, 168, 255;
+  --bs-link-hover-color: var(--dm-estrela);
+  --bs-link-hover-color-rgb: 196, 181, 253;
+  --bs-focus-ring-color: rgba(var(--dm-violeta-rgb), 0.35);
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--dm-espaco);
+  min-height: 100vh;
+}
+
+/* Títulos com ar de inscrição rúnica */
+h1, h2, h3, .h1, .h2, .h3, .navbar-brand, .titulo-runico {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+::selection {
+  background: rgba(var(--dm-violeta-rgb), 0.45);
+}
+
+/* ---------- Superfícies (cartões, listas, modais) ---------- */
+
+.card,
+.list-group,
+.modal-content {
+  --bs-card-bg: rgba(var(--dm-superficie-rgb), 0.78);
+  --bs-card-border-color: var(--dm-borda);
+  --bs-card-cap-bg: rgba(var(--dm-violeta-rgb), 0.08);
+  --bs-list-group-bg: rgba(var(--dm-superficie-rgb), 0.78);
+  --bs-list-group-border-color: var(--dm-borda);
+  --bs-list-group-action-hover-bg: rgba(var(--dm-cobalto-rgb), 0.14);
+  --bs-list-group-action-active-bg: rgba(var(--dm-violeta-rgb), 0.2);
+  --bs-modal-bg: var(--dm-superficie);
+  --bs-modal-border-color: var(--dm-borda-forte);
+}
+
+.card,
+.list-group {
+  backdrop-filter: blur(6px);
+  box-shadow: var(--dm-brilho);
+}
+
+.card {
+  border-radius: 0.9rem;
+}
+
+.card:hover {
+  --bs-card-border-color: rgba(var(--dm-violeta-rgb), 0.3);
+}
+
+.modal-content {
+  box-shadow: 0 0 0 1px var(--dm-borda-forte), 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(var(--dm-violeta-rgb), 0.2);
+}
+
+.modal-backdrop.show {
+  --bs-backdrop-opacity: 0.7;
+  backdrop-filter: blur(2px);
+}
+
+/* Cartão de destaque, com contorno em gradiente (login, escudo) */
+.cartao-astral {
+  position: relative;
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(rgba(var(--dm-superficie-rgb), 0.92), rgba(var(--dm-superficie-rgb), 0.92)) padding-box,
+    linear-gradient(135deg, rgba(var(--dm-cobalto-rgb), 0.7), rgba(var(--dm-violeta-rgb), 0.7)) border-box !important;
+}
+
+/* ---------- Navegação ---------- */
+
+.navbar-astral {
+  background: rgba(var(--dm-espaco-rgb), 0.72);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, rgba(var(--dm-cobalto-rgb), 0.6), rgba(var(--dm-violeta-rgb), 0.6), transparent) 1;
+}
+
+.navbar-astral .navbar-brand {
+  color: #f0f2ff;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- Botões ---------- */
+
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--dm-cobalto);
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--dm-cobalto-claro);
+  --bs-btn-hover-border-color: transparent;
+  --bs-btn-active-bg: var(--dm-violeta);
+  --bs-btn-active-border-color: transparent;
+  --bs-btn-disabled-bg: #3a4170;
+  --bs-btn-disabled-border-color: transparent;
+  --bs-btn-focus-shadow-rgb: var(--dm-violeta-rgb);
+  background-image: var(--dm-gradiente);
+  box-shadow: 0 4px 18px rgba(var(--dm-cobalto-rgb), 0.35);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 24px rgba(var(--dm-violeta-rgb), 0.5);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: #a9bbff;
+  --bs-btn-border-color: rgba(var(--dm-cobalto-rgb), 0.7);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(var(--dm-cobalto-rgb), 0.35);
+  --bs-btn-hover-border-color: var(--dm-cobalto-claro);
+  --bs-btn-active-bg: rgba(var(--dm-violeta-rgb), 0.45);
+  --bs-btn-active-border-color: var(--dm-violeta);
+  --bs-btn-focus-shadow-rgb: var(--dm-violeta-rgb);
+}
+
+.btn-outline-secondary {
+  --bs-btn-color: #c3c9ef;
+  --bs-btn-border-color: rgba(154, 163, 212, 0.45);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(154, 163, 212, 0.18);
+  --bs-btn-hover-border-color: rgba(154, 163, 212, 0.7);
+  --bs-btn-active-bg: rgba(154, 163, 212, 0.28);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: #fca5a5;
+  --bs-btn-border-color: rgba(248, 113, 113, 0.55);
+  --bs-btn-hover-bg: rgba(248, 113, 113, 0.2);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-border-color: #f87171;
+}
+
+.btn-danger {
+  --bs-btn-bg: #dc4a4a;
+  --bs-btn-border-color: #dc4a4a;
+  --bs-btn-hover-bg: #ef5b5b;
+  --bs-btn-hover-border-color: #ef5b5b;
+}
+
+.btn-link {
+  --bs-btn-color: var(--bs-link-color);
+  --bs-btn-hover-color: var(--bs-link-hover-color);
+}
+
+/* ---------- Formulários ---------- */
+
+.form-control,
+.form-select {
+  background-color: rgba(7, 11, 31, 0.6);
+  border-color: rgba(122, 140, 255, 0.28);
+  color: var(--dm-texto);
+}
+
+.form-control::placeholder {
+  color: #6f78a8;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: rgba(7, 11, 31, 0.85);
+  border-color: var(--dm-violeta);
+  box-shadow: 0 0 0 0.2rem rgba(var(--dm-violeta-rgb), 0.25), 0 0 18px rgba(var(--dm-cobalto-rgb), 0.25);
+  color: #fff;
+}
+
+.form-check-input {
+  background-color: rgba(7, 11, 31, 0.6);
+  border-color: rgba(122, 140, 255, 0.45);
+}
+
+.form-check-input:checked {
+  background-color: var(--dm-violeta);
+  border-color: var(--dm-violeta);
+}
+
+.form-check-input:focus {
+  border-color: var(--dm-violeta);
+  box-shadow: 0 0 0 0.2rem rgba(var(--dm-violeta-rgb), 0.25);
+}
+
+.input-group-text {
+  background-color: rgba(var(--dm-violeta-rgb), 0.12);
+  border-color: rgba(122, 140, 255, 0.28);
+  color: var(--dm-estrela);
+}
+
+/* ---------- Selos e etiquetas ---------- */
+
+/* Etiquetas de tag: um brilho violeta discreto */
+.badge.text-bg-light {
+  background-color: rgba(var(--dm-violeta-rgb), 0.16) !important;
+  color: #ddd3ff !important;
+  border-color: rgba(var(--dm-violeta-rgb), 0.4) !important;
+}
+
+.selo-dnd {
+  background: linear-gradient(135deg, #1f45d6, #2f5bff);
+  color: #fff;
+}
+
+.selo-daggerheart {
+  background: linear-gradient(135deg, #6d3fe0, #9b6cff);
+  color: #fff;
+}
+
+/* Número dentro de um escudo heráldico (passos da sessão, cenas) */
+.selo-escudo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75em;
+  height: 1.95em;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
+  background: var(--dm-gradiente);
+  clip-path: polygon(50% 0, 100% 14%, 100% 56%, 50% 100%, 0 56%, 0 14%);
+  filter: drop-shadow(0 0 6px rgba(var(--dm-violeta-rgb), 0.6));
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Separador com estrela no meio */
+.divisor-estelar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--dm-estrela);
+  font-size: 0.8rem;
+}
+
+.divisor-estelar::before,
+.divisor-estelar::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--dm-violeta-rgb), 0.5), transparent);
+}
+
+/* ---------- Céu estrelado (fundo fixo) ---------- */
+
+.ceu-estrelado {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 60% 45% at 12% 18%, rgba(var(--dm-cobalto-rgb), 0.22), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 88% 82%, rgba(var(--dm-violeta-rgb), 0.2), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 70% 10%, rgba(99, 102, 241, 0.1), transparent 70%),
+    var(--dm-espaco);
+}
+
+.ceu-estrelado .estrelas {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+}
+
+.ceu-estrelado .estrelas-pequenas {
+  background-image:
+    radial-gradient(1px 1px at 23px 41px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 87px 12px, rgba(196, 181, 253, 0.7), transparent),
+    radial-gradient(1px 1px at 141px 96px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 191px 33px, rgba(169, 187, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 59px 152px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 172px 181px, rgba(196, 181, 253, 0.6), transparent),
+    radial-gradient(1px 1px at 112px 137px, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 210px 210px;
+}
+
+.ceu-estrelado .estrelas-medias {
+  background-image:
+    radial-gradient(1.5px 1.5px at 45px 80px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 260px 30px, #c4b5fd, transparent),
+    radial-gradient(1.5px 1.5px at 330px 250px, #a9bbff, transparent),
+    radial-gradient(1.5px 1.5px at 150px 300px, #fff, transparent);
+  background-size: 380px 380px;
+  opacity: 0.8;
+}
+
+.ceu-estrelado .estrelas-grandes {
+  background-image:
+    radial-gradient(2px 2px at 120px 140px, #fff, transparent),
+    radial-gradient(2px 2px at 520px 420px, #d8ccff, transparent),
+    radial-gradient(2.5px 2.5px at 410px 90px, #b9c8ff, transparent);
+  background-size: 640px 640px;
+  filter: drop-shadow(0 0 3px rgba(196, 181, 253, 0.9));
+}
+
+.ceu-estrelado .constelacao {
+  position: absolute;
+  right: -40px;
+  bottom: -20px;
+  width: 520px;
+  max-width: 70vw;
+  opacity: 0.45;
+}
+
+.ceu-estrelado .constelacao-alto {
+  position: absolute;
+  left: -30px;
+  top: 70px;
+  width: 300px;
+  max-width: 45vw;
+  opacity: 0.25;
+  transform: rotate(-12deg);
+}
+
+.ceu-estrelado .orbita {
+  transform-origin: 260px 170px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ceu-estrelado .estrelas-medias {
+    animation: cintilar 6s ease-in-out infinite alternate;
+  }
+
+  .ceu-estrelado .estrelas-grandes {
+    animation: cintilar 9s ease-in-out infinite alternate-reverse;
+  }
+
+  .ceu-estrelado .orbita {
+    animation: girar 140s linear infinite;
+  }
+}
+
+@keyframes cintilar {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Escudo (tela da sessão) ---------- */
+
+.painel-escudo {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.painel-escudo > .card-body {
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.etiqueta-registro {
+  border: 1px solid rgba(var(--dm-cobalto-rgb), 0.45);
+  background: rgba(var(--dm-cobalto-rgb), 0.12);
+  color: #d5ddff;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.etiqueta-registro:hover,
+.etiqueta-registro:focus-visible {
+  background: rgba(var(--dm-violeta-rgb), 0.28);
+  border-color: var(--dm-violeta);
+  color: #fff;
+}
+
+.cartao-lateral {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 100vw);
+  z-index: 1050;
+  overflow-y: auto;
+  background: rgba(var(--dm-superficie-rgb), 0.97);
+  border-left: 1px solid var(--dm-borda-forte);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.55), -2px 0 24px rgba(var(--dm-violeta-rgb), 0.2);
+}
+
+.resultado-busca.ativo {
+  background: rgba(var(--dm-violeta-rgb), 0.22);
+  box-shadow: inset 3px 0 0 var(--dm-violeta);
+}
+
+kbd {
+  background: rgba(var(--dm-violeta-rgb), 0.2);
+  border: 1px solid rgba(var(--dm-violeta-rgb), 0.45);
+  color: var(--dm-estrela);
+}

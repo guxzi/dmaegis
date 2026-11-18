@@ -57,7 +57,7 @@ export default function RegistroDetalhe() {
         {registro.resumo && <p className="lead">{registro.resumo}</p>}
 
         {registro.atributos.length > 0 && (
-          <dl className="row border rounded py-2 mx-0 mb-3">
+          <dl className="row border rounded-3 py-2 mx-0 mb-3 bg-body-tertiary">
             {registro.atributos.map((a) => (
               <div className="col-6 col-md-4 col-lg-3 mb-2" key={a.chave}>
                 <dt className="small text-secondary">{a.chave}</dt>

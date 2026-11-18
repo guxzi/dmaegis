@@ -27,8 +27,8 @@ function Passo({ numero, titulo, children }) {
   return (
     <section className="card mb-3">
       <div className="card-body">
-        <h2 className="h6 text-uppercase text-secondary mb-3">
-          <span className="badge text-bg-dark me-2">{numero}</span>{titulo}
+        <h2 className="h6 text-uppercase text-secondary mb-3 d-flex align-items-center">
+          <span className="selo-escudo me-2">{numero}</span>{titulo}
         </h2>
         {children}
       </div>
