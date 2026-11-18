@@ -14,6 +14,9 @@ public static class StatusErroNegocio
         [BusinessErrors.CredenciaisInvalidas.Code] = StatusCodes.Status401Unauthorized,
         [BusinessErrors.CampanhaNaoEncontrada.Code] = StatusCodes.Status404NotFound,
         [BusinessErrors.RegistroNaoEncontrado.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.SessaoNumeroDuplicado.Code] = StatusCodes.Status409Conflict,
+        [BusinessErrors.SessaoNaoEncontrada.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.SegredoNaoEncontrado.Code] = StatusCodes.Status404NotFound,
     };
 
     public static int Obter(int code) =>
