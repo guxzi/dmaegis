@@ -3,8 +3,24 @@ using DMAegis.Model;
 
 namespace DMAegis.Repository;
 
+/// <summary>Metadados de uma imagem com o nome e o tipo do registro dono (galeria da campanha).</summary>
+public class ImagemDaCampanha
+{
+    public int Id { get; set; }
+    public int IdRegistro { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public string TipoConteudo { get; set; } = string.Empty;
+    public int Tamanho { get; set; }
+    public int Ordem { get; set; }
+    public string NomeRegistro { get; set; } = string.Empty;
+    public int IdTipoRegistro { get; set; }
+}
+
 public interface IImagemRegistroRepository
 {
+    /// <summary>Todas as imagens da campanha (sem o conteúdo), por nome do registro e ordem.</summary>
+    Task<IEnumerable<ImagemDaCampanha>> ListarPorCampanhaAsync(int idCampanha);
+
     /// <summary>Metadados das imagens do registro, em ordem (sem o conteúdo).</summary>
     Task<IEnumerable<ImagemRegistro>> ListarPorRegistroAsync(int idRegistro);
     Task<int> ContarPorRegistroAsync(int idRegistro);
@@ -30,6 +46,20 @@ public class ImagemRegistroRepository : RepositoryBase, IImagemRegistroRepositor
         """;
 
     public ImagemRegistroRepository(IConexaoFactory conexaoFactory) : base(conexaoFactory) { }
+
+    public async Task<IEnumerable<ImagemDaCampanha>> ListarPorCampanhaAsync(int idCampanha)
+    {
+        await using var conexao = ConexaoFactory.Criar();
+        return await conexao.QueryAsync<ImagemDaCampanha>("""
+            SELECT i.co_seq_imagem_registro AS Id, i.co_registro AS IdRegistro, i.no_imagem AS Titulo,
+                   i.ds_tipo_conteudo AS TipoConteudo, i.nu_tamanho AS Tamanho, i.nu_ordem AS Ordem,
+                   r.no_registro AS NomeRegistro, r.co_tipo_registro AS IdTipoRegistro
+            FROM tb_imagem_registro i
+            JOIN tb_registro r ON r.co_seq_registro = i.co_registro
+            WHERE r.co_campanha = @idCampanha
+            ORDER BY r.no_registro, i.nu_ordem, i.co_seq_imagem_registro
+            """, new { idCampanha });
+    }
 
     public async Task<IEnumerable<ImagemRegistro>> ListarPorRegistroAsync(int idRegistro)
     {

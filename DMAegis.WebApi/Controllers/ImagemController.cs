@@ -24,6 +24,23 @@ public class ImagemController : ControllerBase
         _imagemService = imagemService;
     }
 
+    /// <summary>Galeria: todas as imagens da campanha, com o nome e o tipo do registro de cada uma.</summary>
+    [HttpGet("api/campanhas/{idCampanha:int}/imagens")]
+    public async Task<ActionResult<ApiResponse<List<ImagemDaCampanhaResponseApiModel>>>> ListarDaCampanha(int idCampanha)
+    {
+        var imagens = await _imagemService.ListarDaCampanhaAsync(User.ObterIdUsuario(), idCampanha);
+        return Ok(ApiResponse<List<ImagemDaCampanhaResponseApiModel>>.Sucesso(imagens.Select(i => new ImagemDaCampanhaResponseApiModel
+        {
+            Id = i.Id,
+            IdRegistro = i.IdRegistro,
+            Titulo = i.Titulo,
+            TipoConteudo = i.TipoConteudo,
+            Tamanho = i.Tamanho,
+            NomeRegistro = i.NomeRegistro,
+            IdTipoRegistro = i.IdTipoRegistro,
+        }).ToList()));
+    }
+
     [HttpGet("api/registros/{idRegistro:int}/imagens")]
     public async Task<ActionResult<ApiResponse<List<ImagemResponseApiModel>>>> Listar(int idRegistro)
     {

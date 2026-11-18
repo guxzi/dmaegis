@@ -129,6 +129,22 @@ public class ImagemControllerTests
     }
 
     [Fact]
+    public async Task ListarDaCampanha_DevolveNomeDoRegistro()
+    {
+        _api.Imagens.Setup(s => s.ListarDaCampanhaAsync(7, 1)).ReturnsAsync(
+        [
+            new ImagemDaCampanhaServiceModel { Id = 9, IdRegistro = 4, Titulo = "Retrato", TipoConteudo = "image/png", Tamanho = 5, NomeRegistro = "Sken", IdTipoRegistro = 1 },
+        ]);
+        var cliente = await _api.CriarClienteLogadoAsync();
+
+        var data = (await LerEnvelopeAsync(await cliente.GetAsync("/api/campanhas/1/imagens"))).GetProperty("data");
+
+        Assert.Equal("Sken", data[0].GetProperty("nomeRegistro").GetString());
+        Assert.Equal(1, data[0].GetProperty("idTipoRegistro").GetInt32());
+        Assert.Equal(4, data[0].GetProperty("idRegistro").GetInt32());
+    }
+
+    [Fact]
     public async Task Excluir_Responde200()
     {
         var cliente = await _api.CriarClienteLogadoAsync();

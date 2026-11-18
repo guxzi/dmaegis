@@ -16,9 +16,13 @@ public class ImagemServiceTests
 
     private readonly Mock<IImagemRegistroRepository> _imagens = new();
     private readonly Mock<IRegistroService> _registros = new();
+    private readonly Mock<ICampanhaService> _campanhas = new();
 
     public ImagemServiceTests()
     {
+        _campanhas.Setup(c => c.ObterDoUsuarioOuLancarAsync(1, 10)).ReturnsAsync(new Campanha { Id = 10, IdUsuario = 1 });
+        _campanhas.Setup(c => c.ObterDoUsuarioOuLancarAsync(1, 20))
+            .ThrowsAsync(new BusinessRuleException(BusinessErrors.CampanhaNaoEncontrada));
         _registros.Setup(r => r.ObterAsync(1, 100)).ReturnsAsync(new RegistroServiceModel { Id = 100, IdCampanha = 10, Nome = "Prisao" });
         _registros.Setup(r => r.ObterAsync(1, 200)).ThrowsAsync(new BusinessRuleException(BusinessErrors.RegistroNaoEncontrado));
         _imagens.Setup(i => i.ObterMetadadosAsync(50)).ReturnsAsync(new ImagemRegistro { Id = 50, IdRegistro = 100, Titulo = "Mapa", TipoConteudo = "image/jpeg" });
@@ -27,7 +31,28 @@ public class ImagemServiceTests
         _imagens.Setup(i => i.ContarPorRegistroAsync(100)).ReturnsAsync(2);
     }
 
-    private ImagemService CriarService() => new(_imagens.Object, _registros.Object);
+    private ImagemService CriarService() => new(_imagens.Object, _registros.Object, _campanhas.Object);
+
+    [Fact]
+    public async Task ListarDaCampanhaAsync_DevolveImagensComNomeETipoDoRegistro()
+    {
+        _imagens.Setup(i => i.ListarPorCampanhaAsync(10)).ReturnsAsync(
+        [
+            new ImagemDaCampanha { Id = 50, IdRegistro = 100, Titulo = "Retrato", TipoConteudo = "image/jpeg", Tamanho = 10, NomeRegistro = "Sken", IdTipoRegistro = 1 },
+        ]);
+
+        var lista = (await CriarService().ListarDaCampanhaAsync(1, 10)).ToList();
+
+        var imagem = Assert.Single(lista);
+        Assert.Equal(("Sken", 1, 100, "Retrato"), (imagem.NomeRegistro, imagem.IdTipoRegistro, imagem.IdRegistro, imagem.Titulo));
+    }
+
+    [Fact]
+    public async Task ListarDaCampanhaAsync_CampanhaAlheia_Codigo5()
+    {
+        Assert.Equal(BusinessErrors.CampanhaNaoEncontrada.Code, await CodigoAsync(() => CriarService().ListarDaCampanhaAsync(1, 20)));
+        _imagens.Verify(i => i.ListarPorCampanhaAsync(It.IsAny<int>()), Times.Never);
+    }
 
     private static async Task<int> CodigoAsync(Func<Task> acao) =>
         (await Assert.ThrowsAsync<BusinessRuleException>(acao)).Code;

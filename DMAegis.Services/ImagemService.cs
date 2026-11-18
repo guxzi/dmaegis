@@ -13,8 +13,17 @@ public class ImagemServiceModel
     public int Tamanho { get; set; }
 }
 
+public class ImagemDaCampanhaServiceModel : ImagemServiceModel
+{
+    public string NomeRegistro { get; set; } = string.Empty;
+    public int IdTipoRegistro { get; set; }
+}
+
 public interface IImagemService
 {
+    /// <summary>Todas as imagens da campanha (galeria), com o nome e o tipo do registro de cada uma.</summary>
+    Task<IEnumerable<ImagemDaCampanhaServiceModel>> ListarDaCampanhaAsync(int idUsuario, int idCampanha);
+
     Task<IEnumerable<ImagemServiceModel>> ListarAsync(int idUsuario, int idRegistro);
 
     /// <summary>Anexa uma imagem ao registro. O tipo é detectado pelos bytes, nunca pelo nome do arquivo.</summary>
@@ -34,11 +43,30 @@ public class ImagemService : IImagemService
 
     private readonly IImagemRegistroRepository _imagemRepository;
     private readonly IRegistroService _registroService;
+    private readonly ICampanhaService _campanhaService;
 
-    public ImagemService(IImagemRegistroRepository imagemRepository, IRegistroService registroService)
+    public ImagemService(IImagemRegistroRepository imagemRepository, IRegistroService registroService, ICampanhaService campanhaService)
     {
         _imagemRepository = imagemRepository;
         _registroService = registroService;
+        _campanhaService = campanhaService;
+    }
+
+    public async Task<IEnumerable<ImagemDaCampanhaServiceModel>> ListarDaCampanhaAsync(int idUsuario, int idCampanha)
+    {
+        await _campanhaService.ObterDoUsuarioOuLancarAsync(idUsuario, idCampanha);
+        return (await _imagemRepository.ListarPorCampanhaAsync(idCampanha))
+            .Select(i => new ImagemDaCampanhaServiceModel
+            {
+                Id = i.Id,
+                IdRegistro = i.IdRegistro,
+                Titulo = i.Titulo,
+                TipoConteudo = i.TipoConteudo,
+                Tamanho = i.Tamanho,
+                NomeRegistro = i.NomeRegistro,
+                IdTipoRegistro = i.IdTipoRegistro,
+            })
+            .ToList();
     }
 
     /// <summary>Tipo da imagem pela assinatura dos primeiros bytes; null se não for JPEG, PNG, GIF ou WebP.</summary>
