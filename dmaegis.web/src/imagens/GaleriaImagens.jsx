@@ -7,8 +7,13 @@ import VisualizadorImagem from './VisualizadorImagem.jsx';
 
 // Mapas e imagens de um registro. Com `editavel`, permite enviar (vários de uma vez) e excluir.
 // Sem `editavel` e sem imagens, não mostra nada (cartão do escudo).
-export default function GaleriaImagens({ idRegistro, editavel = false, colunas = 3 }) {
+export default function GaleriaImagens({ idRegistro, editavel = false, colunas = 3, aoMudar }) {
   const [imagens, setImagens] = useState(null);
+
+  // Avisa a página (ex.: o detalhe do registro mostra o primeiro mapa em destaque).
+  useEffect(() => {
+    if (imagens) aoMudar?.(imagens);
+  }, [imagens, aoMudar]);
   const [aberta, setAberta] = useState(null);
   const [paraExcluir, setParaExcluir] = useState(null);
   const [progresso, setProgresso] = useState('');

@@ -6,40 +6,43 @@ import { Carregando } from '../auth/RotaProtegida.jsx';
 import FormularioCampanha from '../campanhas/FormularioCampanha.jsx';
 import { separarCampanhas } from '../campanhas/organizar.js';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
-import Cabecalho from '../componentes/Cabecalho.jsx';
 import { textoExclusao } from '../campanhas/textos.js';
+import Cabecalho from '../componentes/Cabecalho.jsx';
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx';
+import ArteCampanha from '../visual/ArteCampanha.jsx';
+import CabecalhoSecao from '../visual/CabecalhoSecao.jsx';
 
 function CartaoCampanha({ campanha, aoArquivar, aoExcluir }) {
   return (
-    <div className="col">
-      <div className={`card h-100 ${campanha.arquivada ? 'bg-body-tertiary' : ''}`}>
-        <div className="card-body">
-          <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
-            <h3 className="h5 card-title mb-0">
-              <Link to={`/campanhas/${campanha.id}`} className="stretched-link text-decoration-none">
-                {campanha.nome}
-              </Link>
-            </h3>
-            <SeloSistema idSistema={campanha.idSistema} nomeSistema={campanha.nomeSistema} />
-          </div>
+    <div className="col surgir">
+      <article className={`cartao-arte ${campanha.arquivada ? 'opacity-75' : ''}`}>
+        <div className="arte">
+          <ArteCampanha semente={campanha.id} />
+        </div>
+        <span className="selo-canto">
+          <SeloSistema idSistema={campanha.idSistema} nomeSistema={campanha.nomeSistema} />
+        </span>
+        <div className="corpo">
+          <h3>
+            <Link to={`/campanhas/${campanha.id}`} className="stretched-link text-decoration-none titulo-estelar">
+              {campanha.nome}
+            </Link>
+          </h3>
           {campanha.descricao && (
-            <p className="card-text text-secondary small"
-              style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p className="text-secondary mb-0"
+              style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {campanha.descricao}
             </p>
           )}
         </div>
-        {/* position-relative + z-index: os botões ficam acima do stretched-link do título */}
-        <div className="card-footer bg-transparent d-flex gap-2 position-relative" style={{ zIndex: 2 }}>
-          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => aoArquivar(campanha)}>
+        <div className="rodape">
+          <Link to={`/campanhas/${campanha.id}/escudo`} className="btn btn-sm btn-primary">Escudo</Link>
+          <button type="button" className="btn btn-sm btn-fantasma ms-auto" onClick={() => aoArquivar(campanha)}>
             {campanha.arquivada ? 'Desarquivar' : 'Arquivar'}
           </button>
-          <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => aoExcluir(campanha)}>
-            Excluir
-          </button>
+          <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => aoExcluir(campanha)}>Excluir</button>
         </div>
-      </div>
+      </article>
     </div>
   );
 }
@@ -102,21 +105,29 @@ export default function Campanhas() {
     <>
       <Cabecalho />
       <main className="container pb-5">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h1 className="h3 mb-0">Campanhas</h1>
-          {!criando && (
-            <button type="button" className="btn btn-primary" onClick={() => setCriando(true)}>
-              Nova campanha
-            </button>
+        <CabecalhoSecao
+          chamada="Suas mesas"
+          titulo="Campanhas"
+          subtitulo="Cada campanha guarda o caderno, as sessões e os mapas. Abra o escudo e conduza o jogo."
+          acoes={!criando && (
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => setCriando(true)}>Nova campanha</button>
           )}
-        </div>
+        >
+          {campanhas && (
+            <div className="numeros-destaque">
+              <div className="numero-destaque"><strong>{ativas.length}</strong><span>ativas</span></div>
+              <div className="numero-destaque"><strong>{arquivadas.length}</strong><span>arquivadas</span></div>
+              <div className="numero-destaque"><strong>{new Set(ativas.map((c) => c.idSistema)).size}</strong><span>sistemas em jogo</span></div>
+            </div>
+          )}
+        </CabecalhoSecao>
 
         {erro && <div className="alert alert-danger" role="alert">{erro}</div>}
 
         {criando && (
-          <div className="card mb-4">
-            <div className="card-body">
-              <h2 className="h5 mb-3">Nova campanha</h2>
+          <div className="card cartao-astral mb-4 surgir">
+            <div className="card-body p-4">
+              <h2 className="h4 mb-3">Nova campanha</h2>
               <FormularioCampanha sistemas={sistemas} textoBotao="Criar campanha"
                 aoSalvar={criar} aoCancelar={() => setCriando(false)} />
             </div>
@@ -126,10 +137,10 @@ export default function Campanhas() {
         {campanhas === null && !erro && <Carregando />}
 
         {campanhas !== null && ativas.length === 0 && !criando && (
-          <p className="text-secondary">Nenhuma campanha ainda. Crie a primeira!</p>
+          <div className="aviso-astral">Nenhuma campanha ainda. Crie a primeira!</div>
         )}
 
-        <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
           {ativas.map((c) => (
             <CartaoCampanha key={c.id} campanha={c} aoArquivar={alternarArquivada} aoExcluir={setParaExcluir} />
           ))}
@@ -137,12 +148,12 @@ export default function Campanhas() {
 
         {arquivadas.length > 0 && (
           <section className="mt-5">
-            <button type="button" className="btn btn-link px-0 text-decoration-none"
+            <button type="button" className="btn btn-link px-0 text-decoration-none rotulo-secao"
               aria-expanded={mostrarArquivadas} onClick={() => setMostrarArquivadas((v) => !v)}>
               {mostrarArquivadas ? '▾' : '▸'} Arquivadas ({arquivadas.length})
             </button>
             {mostrarArquivadas && (
-              <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mt-1">
+              <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mt-1">
                 {arquivadas.map((c) => (
                   <CartaoCampanha key={c.id} campanha={c} aoArquivar={alternarArquivada} aoExcluir={setParaExcluir} />
                 ))}
