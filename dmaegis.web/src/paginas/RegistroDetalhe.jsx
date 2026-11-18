@@ -7,6 +7,7 @@ import SeloTipo from '../caderno/SeloTipo.jsx';
 import { useCaderno } from '../caderno/useCaderno.js';
 import Cabecalho from '../componentes/Cabecalho.jsx';
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx';
+import GaleriaImagens from '../imagens/GaleriaImagens.jsx';
 
 export default function RegistroDetalhe() {
   const { id, idRegistro } = useParams();
@@ -70,6 +71,10 @@ export default function RegistroDetalhe() {
         {registro.descricao
           ? <p style={{ whiteSpace: 'pre-line' }}>{registro.descricao}</p>
           : <p className="text-secondary fst-italic">Sem descrição.</p>}
+
+        <div className="mt-4">
+          <GaleriaImagens idRegistro={registro.id} editavel colunas={3} />
+        </div>
       </article>
     );
   }

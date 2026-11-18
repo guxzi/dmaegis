@@ -4,6 +4,7 @@ import { obterRegistro } from '../api/caderno.js';
 import { mensagemDeErro } from '../api/erros.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloTipo from '../caderno/SeloTipo.jsx';
+import GaleriaImagens from '../imagens/GaleriaImagens.jsx';
 
 // Cartão lateral com o registro inteiro, para consultar sem sair do escudo. Esc ou × fecham.
 export default function CartaoRegistro({ idCampanha, idRegistro, rotulo, aoFechar }) {
@@ -59,6 +60,8 @@ export default function CartaoRegistro({ idCampanha, idRegistro, rotulo, aoFecha
           {registro.descricao
             ? <p style={{ whiteSpace: 'pre-line' }}>{registro.descricao}</p>
             : <p className="text-secondary fst-italic small">Sem descrição.</p>}
+
+          <GaleriaImagens idRegistro={registro.id} colunas={2} />
 
           <Link to={`/campanhas/${idCampanha}/caderno/${registro.id}/editar`} className="small">Editar no caderno</Link>
         </>
