@@ -35,15 +35,15 @@ public class ImagemControllerTests
     [Fact]
     public async Task Upload_SemTitulo_UsaNomeDoArquivoERepassaBytes()
     {
-        _api.Imagens.Setup(s => s.InserirAsync(7, 4, "Gearhole Prison - DM Version", It.IsAny<byte[]>()))
-            .ReturnsAsync(new ImagemServiceModel { Id = 9, IdRegistro = 4, Titulo = "Gearhole Prison - DM Version", TipoConteudo = "image/jpeg", Tamanho = 6 });
+        _api.Imagens.Setup(s => s.InserirAsync(7, 4, "Prisao do Porto - DM Version", It.IsAny<byte[]>()))
+            .ReturnsAsync(new ImagemServiceModel { Id = 9, IdRegistro = 4, Titulo = "Prisao do Porto - DM Version", TipoConteudo = "image/jpeg", Tamanho = 6 });
         var cliente = await _api.CriarClienteLogadoAsync();
 
-        var resposta = await cliente.PostAsync("/api/registros/4/imagens", Formulario(Jpeg, "Gearhole Prison - DM Version.jpg"));
+        var resposta = await cliente.PostAsync("/api/registros/4/imagens", Formulario(Jpeg, "Prisao do Porto - DM Version.jpg"));
 
         Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
         Assert.Equal(9, (await LerEnvelopeAsync(resposta)).GetProperty("data").GetProperty("id").GetInt32());
-        _api.Imagens.Verify(s => s.InserirAsync(7, 4, "Gearhole Prison - DM Version",
+        _api.Imagens.Verify(s => s.InserirAsync(7, 4, "Prisao do Porto - DM Version",
             It.Is<byte[]>(b => b.SequenceEqual(Jpeg))), Times.Once);
     }
 
@@ -119,12 +119,12 @@ public class ImagemControllerTests
     public async Task Listar_DevolveMetadados()
     {
         _api.Imagens.Setup(s => s.ListarAsync(7, 4)).ReturnsAsync(
-            [new ImagemServiceModel { Id = 9, IdRegistro = 4, Titulo = "Gearhole", TipoConteudo = "image/jpeg", Tamanho = 1234 }]);
+            [new ImagemServiceModel { Id = 9, IdRegistro = 4, Titulo = "Prisao", TipoConteudo = "image/jpeg", Tamanho = 1234 }]);
         var cliente = await _api.CriarClienteLogadoAsync();
 
         var data = (await LerEnvelopeAsync(await cliente.GetAsync("/api/registros/4/imagens"))).GetProperty("data");
 
-        Assert.Equal("Gearhole", data[0].GetProperty("titulo").GetString());
+        Assert.Equal("Prisao", data[0].GetProperty("titulo").GetString());
         Assert.Equal(1234, data[0].GetProperty("tamanho").GetInt32());
     }
 

@@ -2,9 +2,9 @@ import { expect, test } from 'vitest';
 import { formatarTamanho, tituloDoArquivo, validarArquivo } from './arquivos.js';
 
 test('tituloDoArquivo tira a extensão e limpa separadores', () => {
-  expect(tituloDoArquivo('Gearhole Prison - DM Version.jpg')).toBe('Gearhole Prison DM Version');
+  expect(tituloDoArquivo('Prisao do Porto - DM Version.jpg')).toBe('Prisao do Porto DM Version');
   expect(tituloDoArquivo('mapa_da_ilha.webp')).toBe('mapa da ilha');
-  expect(tituloDoArquivo("Stahlmasts Lair - PC Version.JPG")).toBe('Stahlmasts Lair PC Version');
+  expect(tituloDoArquivo("Covil do Inventor - PC Version.JPG")).toBe('Covil do Inventor PC Version');
   expect(tituloDoArquivo('semextensao')).toBe('semextensao');
 });
 

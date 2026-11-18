@@ -19,7 +19,7 @@ public class ImagemServiceTests
 
     public ImagemServiceTests()
     {
-        _registros.Setup(r => r.ObterAsync(1, 100)).ReturnsAsync(new RegistroServiceModel { Id = 100, IdCampanha = 10, Nome = "Gearhole" });
+        _registros.Setup(r => r.ObterAsync(1, 100)).ReturnsAsync(new RegistroServiceModel { Id = 100, IdCampanha = 10, Nome = "Prisao" });
         _registros.Setup(r => r.ObterAsync(1, 200)).ThrowsAsync(new BusinessRuleException(BusinessErrors.RegistroNaoEncontrado));
         _imagens.Setup(i => i.ObterMetadadosAsync(50)).ReturnsAsync(new ImagemRegistro { Id = 50, IdRegistro = 100, Titulo = "Mapa", TipoConteudo = "image/jpeg" });
         _imagens.Setup(i => i.ObterMetadadosAsync(60)).ReturnsAsync(new ImagemRegistro { Id = 60, IdRegistro = 200, Titulo = "Alheio", TipoConteudo = "image/png" });
@@ -92,9 +92,9 @@ public class ImagemServiceTests
         _imagens.Setup(i => i.InserirAsync(It.IsAny<ImagemRegistro>()))
             .Callback<ImagemRegistro>(i => gravada = i).ReturnsAsync(70);
 
-        var resultado = await CriarService().InserirAsync(1, 100, "  Gearhole DM  ", Png);
+        var resultado = await CriarService().InserirAsync(1, 100, "  Prisao DM  ", Png);
 
-        Assert.Equal("Gearhole DM", gravada!.Titulo);
+        Assert.Equal("Prisao DM", gravada!.Titulo);
         Assert.Equal("image/png", gravada.TipoConteudo);
         Assert.Equal(Png.Length, gravada.Tamanho);
         Assert.Equal(3, gravada.Ordem);
