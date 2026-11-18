@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { listarRegistros } from '../api/caderno.js';
 import { mensagemDeErro } from '../api/erros.js';
+import { listarImagensDaCampanha } from '../api/imagens.js';
 import { criarSessao, listarSessoes, obterSessao } from '../api/sessoes.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
@@ -11,7 +12,10 @@ import Cabecalho from '../componentes/Cabecalho.jsx';
 import { sessaoPadrao } from '../escudo/atalhos.js';
 import CartaoRegistro from '../escudo/CartaoRegistro.jsx';
 import PainelAnotacoes from '../escudo/PainelAnotacoes.jsx';
+import PainelRegras from '../escudo/PainelRegras.jsx';
 import PainelSessao from '../escudo/PainelSessao.jsx';
+import { retratosPorRegistro } from '../imagens/retratos.js';
+import { abrirProjecao } from '../projecao/canal.js';
 
 // Altura disponível abaixo do cabeçalho e da barra do escudo: os painéis rolam por dentro.
 const ALTURA_PAINEIS = 'calc(100vh - 130px)';
@@ -27,12 +31,16 @@ export default function Escudo() {
   const [registros, setRegistros] = useState([]);
   const [idRegistroAberto, setIdRegistroAberto] = useState(null);
   const [erro, setErro] = useState('');
+  const [retratos, setRetratos] = useState({});
+  const [anotacoes, setAnotacoes] = useState([]);
+  const [aba, setAba] = useState('anotacoes');
 
   const idSessao = Number(parametros.get('sessao')) || (sessoes ? sessaoPadrao(sessoes) : null);
 
   useEffect(() => {
     listarSessoes(id).then(setSessoes).catch((e) => setErro(mensagemDeErro(e)));
     listarRegistros(id).then(setRegistros).catch(() => {});
+    listarImagensDaCampanha(id).then((lista) => setRetratos(retratosPorRegistro(lista))).catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -89,6 +97,8 @@ export default function Escudo() {
               {idSessao && (
                 <Link to={`/campanhas/${id}/sessoes/${idSessao}`} className="btn btn-sm btn-outline-secondary">Preparar</Link>
               )}
+              <button type="button" className="btn btn-sm btn-fantasma" onClick={abrirProjecao}
+                title="Janela para compartilhar a tela ou levar ao segundo monitor">Abrir projeção</button>
             </div>
           )}
         </div>
@@ -116,7 +126,8 @@ export default function Escudo() {
                 </div>
                 <div className="card-body">
                   {sessao && campanha
-                    ? <PainelSessao sessao={sessao} registros={registros} idSistema={campanha.idSistema}
+                    ? <PainelSessao key={sessao.id} sessao={sessao} registros={registros} idSistema={campanha.idSistema}
+                        retratos={retratos} anotacoes={anotacoes}
                         aoAbrirRegistro={setIdRegistroAberto}
                         aoMudarSegredos={(segredos) => setSessao((s) => ({ ...s, segredos }))} />
                     : <Carregando />}
@@ -126,10 +137,28 @@ export default function Escudo() {
 
             <div className="col-lg-5 d-flex flex-column gap-3" style={{ height: ALTURA_PAINEIS }}>
               <div className="card painel-escudo flex-grow-1" style={{ minHeight: 0 }}>
-                <div className="card-header"><span className="titulo-runico">Anotações</span></div>
-                <div className="card-body d-flex flex-column" style={{ minHeight: 0 }}>
-                  {idSessao && <PainelAnotacoes key={idSessao} idSessao={idSessao} />}
+                <div className="card-header">
+                  <div className="abas-escudo" role="tablist" aria-label="Anotações ou regras">
+                    <button type="button" role="tab" id="abaAnotacoes" aria-selected={aba === 'anotacoes'}
+                      aria-controls="painelAnotacoes" onClick={() => setAba('anotacoes')}>Anotações</button>
+                    <button type="button" role="tab" id="abaRegras" aria-selected={aba === 'regras'}
+                      aria-controls="painelRegras" onClick={() => setAba('regras')}>Regras</button>
+                  </div>
                 </div>
+                {/* As anotações continuam montadas na aba de regras, para o resumo vivo seguir atualizado. */}
+                <div className={`card-body flex-column ${aba === 'anotacoes' ? 'd-flex' : 'd-none'}`} style={{ minHeight: 0 }}
+                  role="tabpanel" id="painelAnotacoes" aria-labelledby="abaAnotacoes">
+                  {idSessao && (
+                    <PainelAnotacoes key={idSessao} idSessao={idSessao} registros={registros}
+                      aoAbrirRegistro={setIdRegistroAberto} aoMudar={setAnotacoes} />
+                  )}
+                </div>
+                {aba === 'regras' && (
+                  <div className="card-body d-flex flex-column" style={{ minHeight: 0 }}
+                    role="tabpanel" id="painelRegras" aria-labelledby="abaRegras">
+                    {campanha && <PainelRegras idSistema={campanha.idSistema} />}
+                  </div>
+                )}
               </div>
               <div className="card painel-escudo flex-shrink-0" style={{ height: 300 }}>
                 <div className="card-header"><span className="titulo-runico">Dados</span></div>

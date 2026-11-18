@@ -533,3 +533,195 @@
   margin: -2px 0.35rem -2px -0.4rem;
   vertical-align: middle;
 }
+
+/* ---------- Escudo vivo ---------- */
+.dica-conducao {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  margin-bottom: 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--dm-violeta-rgb), 0.35);
+  background: linear-gradient(90deg, rgba(var(--dm-violeta-rgb), 0.16), rgba(47, 91, 255, 0.08));
+  font-size: 0.92rem;
+}
+.dica-conducao-rotulo {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dm-estrela);
+  flex-shrink: 0;
+}
+
+.resumo-vivo {
+  padding: 0.9rem 1rem;
+  border-radius: var(--dm-raio);
+  border: 1px solid var(--dm-borda);
+  background: rgba(7, 11, 31, 0.5);
+}
+.resumo-vivo-numeros {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  text-align: center;
+}
+.resumo-vivo-numeros strong {
+  display: block;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 1.5rem;
+  line-height: 1.1;
+  background: var(--dm-luz-estelar);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.resumo-vivo-numeros strong small { font-size: 0.9rem; }
+.resumo-vivo-numeros span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--dm-texto-suave);
+}
+.resumo-vivo-ultima {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--dm-borda);
+  font-size: 0.88rem;
+  color: var(--dm-texto-suave);
+}
+.resumo-vivo-rostos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--dm-borda);
+}
+.rosto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 4.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dm-texto);
+}
+.rosto .retrato { --tamanho-retrato: 46px; transition: transform 0.2s var(--dm-ease); }
+.rosto:hover .retrato,
+.rosto:focus-visible .retrato { transform: scale(1.08); }
+.rosto-nome {
+  max-width: 100%;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.retrato-inicial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  color: var(--cor-tipo, var(--dm-estrela));
+}
+
+.progresso-cenas {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(154, 163, 212, 0.18);
+  overflow: hidden;
+}
+.progresso-cenas > span {
+  display: block;
+  height: 100%;
+  background: var(--dm-gradiente);
+  transition: width 0.4s var(--dm-ease);
+}
+.cena-escudo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  margin-bottom: 0.2rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--dm-texto);
+  transition: background 0.2s, border-color 0.2s;
+}
+.cena-escudo:hover { background: rgba(var(--dm-violeta-rgb), 0.1); }
+.cena-escudo.passada { color: var(--dm-texto-suave); }
+.cena-escudo.atual {
+  border-color: rgba(var(--dm-violeta-rgb), 0.55);
+  background: rgba(var(--dm-violeta-rgb), 0.16);
+  box-shadow: 0 0 18px rgba(var(--dm-violeta-rgb), 0.18);
+  font-weight: 600;
+}
+.cena-agora {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--dm-estrela);
+}
+
+.abas-escudo { display: flex; gap: 0.25rem; }
+.abas-escudo button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.2rem 0.85rem;
+  background: transparent;
+  color: var(--dm-texto-suave);
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.abas-escudo button:hover { color: #fff; }
+.abas-escudo button[aria-selected="true"] { background: var(--dm-gradiente); color: #fff; }
+
+.secao-regras { margin-bottom: 0.6rem; }
+.secao-regras > summary {
+  cursor: pointer;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  color: var(--dm-estrela);
+  padding: 0.25rem 0;
+}
+.item-regra {
+  padding: 0.4rem 0 0.45rem;
+  border-bottom: 1px solid var(--dm-borda);
+}
+.item-regra dt { font-weight: 700; }
+.item-regra dd { margin: 0.1rem 0 0; font-size: 0.9rem; color: #cfd5f5; }
+.termo-regra {
+  margin-left: 0.4rem;
+  font-weight: 400;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--dm-texto-suave);
+}
+.rodape-regras {
+  margin: 0.8rem 0 0;
+  font-size: 0.72rem;
+  color: var(--dm-texto-suave);
+  overflow-wrap: anywhere;
+}
+
+.mencao {
+  display: inline;
+  padding: 0 0.15rem;
+  border: 0;
+  border-bottom: 1px dashed var(--dm-estrela);
+  border-radius: 3px;
+  background: rgba(var(--dm-violeta-rgb), 0.14);
+  color: var(--dm-estrela);
+  font: inherit;
+}
+.mencao:hover,
+.mencao:focus-visible { background: rgba(var(--dm-violeta-rgb), 0.32); color: #fff; }
