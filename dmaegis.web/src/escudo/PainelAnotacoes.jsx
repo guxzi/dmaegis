@@ -70,7 +70,8 @@ export default function PainelAnotacoes({ idSessao }) {
       {erro && <div className="alert alert-danger py-1 small mb-2">{erro}</div>}
       <form onSubmit={gravar}>
         <input className="form-control" maxLength={2000} placeholder="Anotar… (Enter grava)" aria-label="Nova anotação"
-          value={texto} onChange={(e) => setTexto(e.target.value)} disabled={gravando} />
+          value={texto} onChange={(e) => setTexto(e.target.value)} aria-busy={gravando} />
+        {/* Sem "disabled" enquanto grava: desabilitar tira o foco, e o mestre teria que clicar de novo a cada anotação. */}
       </form>
     </div>
   );

@@ -6,7 +6,7 @@ import { ID_TIPO_PJ, PASSOS_DE_VINCULO, titulosDosPassos, vinculadosDoTipo } fro
 function Bloco({ titulo, children }) {
   return (
     <section className="mb-4">
-      <h3 className="h6 text-uppercase text-secondary mb-2" style={{ letterSpacing: '0.12em' }}>{titulo}</h3>
+      <h3 className="h6 text-uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--dm-estrela)' }}>{titulo}</h3>
       {children}
     </section>
   );

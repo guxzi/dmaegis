@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { mensagemDeErro } from '../api/erros.js';
 import { buscar } from '../api/escudo.js';
@@ -136,5 +137,10 @@ export default function BuscaRapida({ idCampanha, aoEscolherRegistro, aberta, ao
     else navegar(`/campanhas/${idCampanha}/caderno/${registro.id}`);
   };
 
-  return <JanelaBusca idCampanha={idCampanha} aoEscolher={escolher} aoFechar={() => aoMudarAberta(false)} />;
+  // Portal para o <body>: dentro da barra (que tem backdrop-filter), um elemento fixed ficaria
+  // preso à altura dela e a janela apareceria cortada.
+  return createPortal(
+    <JanelaBusca idCampanha={idCampanha} aoEscolher={escolher} aoFechar={() => aoMudarAberta(false)} />,
+    document.body,
+  );
 }
