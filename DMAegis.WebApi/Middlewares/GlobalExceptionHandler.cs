@@ -29,6 +29,12 @@ public class GlobalExceptionHandler : IExceptionHandler
             httpContext.Response.StatusCode = StatusErroNegocio.Obter(regra.Code);
             envelope = ApiResponse<object>.Erro(regra.Code, regra.Mensagem);
         }
+        else if (CorpoGrandeDemais(exception))
+        {
+            // Upload acima do limite: o Kestrel (413) ou o leitor de multipart cortam antes do Service.
+            httpContext.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            envelope = ApiResponse<object>.Erro(BusinessErrors.ImagemGrandeDemais.Code, BusinessErrors.ImagemGrandeDemais.DefaultMessage);
+        }
         else
         {
             _logger.LogError(exception, "Erro não tratado em {Caminho}", httpContext.Request.Path);
@@ -39,4 +45,11 @@ public class GlobalExceptionHandler : IExceptionHandler
         await httpContext.Response.WriteAsJsonAsync(envelope, cancellationToken);
         return true;
     }
+
+    private static bool CorpoGrandeDemais(Exception exception) => exception switch
+    {
+        BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge } => true,
+        InvalidDataException dados => dados.Message.Contains("limit", StringComparison.OrdinalIgnoreCase),
+        _ => false,
+    };
 }
