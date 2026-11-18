@@ -28,7 +28,8 @@
   --dm-brilho: 0 0 0 1px var(--dm-borda), 0 8px 32px rgba(3, 6, 24, 0.55), 0 0 24px rgba(var(--dm-violeta-rgb), 0.08);
 
   /* Bootstrap */
-  --bs-font-sans-serif: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-font-sans-serif: 'Alegreya Sans', 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-body-font-size: 1.06rem;
   --bs-body-bg: var(--dm-espaco);
   --bs-body-bg-rgb: var(--dm-espaco-rgb);
   --bs-body-color: var(--dm-texto);

@@ -1,0 +1,322 @@
+/*
+ * DMAegis — redesign (18/11/2026)
+ * Técnicas do Dungeons and Newbies (projeto do próprio usuário) com a paleta cósmica do tema.css:
+ * botões em pílula, chamadas com linhas, título em luz estelar, cartões com arte, controle segmentado,
+ * caixas de atributo, poeira de estrelas e dados poligonais.
+ */
+
+:root {
+  --dm-luz-estelar: linear-gradient(180deg, #ffffff 0%, #dcd3ff 45%, #93a8ff 100%);
+  --dm-raio: 14px;
+  --dm-raio-g: 22px;
+  --dm-sombra: 0 18px 50px -20px rgba(0, 0, 0, 0.85);
+  --dm-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---------- Botões em pílula (Cinzel, caixa alta) ---------- */
+.btn {
+  border-radius: 999px;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition: transform 0.2s var(--dm-ease), box-shadow 0.2s var(--dm-ease), background-color 0.2s, border-color 0.2s;
+}
+.btn:not(.btn-link):not(.btn-sm):not(.btn-dado) {
+  --bs-btn-padding-x: 1.35rem;
+  --bs-btn-padding-y: 0.55rem;
+}
+.btn-primary:hover { transform: translateY(-1px); }
+.btn-link { font-family: inherit; letter-spacing: 0; }
+.btn-fantasma {
+  --bs-btn-color: #e6e9ff;
+  --bs-btn-bg: rgba(255, 255, 255, 0.04);
+  --bs-btn-border-color: rgba(196, 181, 253, 0.28);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(139, 92, 246, 0.18);
+  --bs-btn-hover-border-color: rgba(196, 181, 253, 0.6);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: rgba(139, 92, 246, 0.3);
+  backdrop-filter: blur(6px);
+}
+.btn.btn-lg { --bs-btn-padding-x: 1.8rem; --bs-btn-padding-y: 0.8rem; font-size: 1rem; }
+
+/* ---------- Chamada e cabeçalho de seção ---------- */
+.chamada {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--dm-estrela);
+}
+.chamada::before,
+.centralizado .chamada::after {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+.cabecalho-secao { margin-bottom: 2rem; }
+.cabecalho-secao.centralizado { text-align: center; }
+.cabecalho-secao h1 { font-size: clamp(1.9rem, 3.4vw, 2.7rem); margin: 0.5rem 0 0.4rem; }
+.cabecalho-secao .subtitulo { color: var(--dm-texto-suave); font-size: 1.12rem; max-width: 640px; margin: 0; }
+.cabecalho-secao.centralizado .subtitulo { margin: 0 auto; }
+
+/* Texto em gradiente de luz estelar */
+.titulo-estelar {
+  background: var(--dm-luz-estelar);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.titulo-estelar .destaque {
+  background: linear-gradient(180deg, #d8ccff, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Números de destaque com barra à esquerda */
+.numeros-destaque { display: flex; flex-wrap: wrap; gap: 1.5rem 2rem; margin-top: 1.6rem; }
+.numero-destaque { border-left: 1px solid rgba(196, 181, 253, 0.45); padding-left: 1rem; }
+.numero-destaque strong { display: block; font-family: 'Cinzel', Georgia, serif; font-size: 2rem; line-height: 1; color: #fff; }
+.numero-destaque span { color: var(--dm-texto-suave); font-size: 0.95rem; }
+
+/* ---------- Hero ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--dm-raio-g);
+  border: 1px solid var(--dm-borda);
+  background:
+    radial-gradient(ellipse 70% 90% at 85% 40%, rgba(139, 92, 246, 0.22), transparent 70%),
+    radial-gradient(ellipse 60% 80% at 10% 100%, rgba(47, 91, 255, 0.2), transparent 70%),
+    rgba(15, 22, 54, 0.6);
+  box-shadow: var(--dm-sombra);
+}
+.hero > .conteudo-hero { position: relative; z-index: 1; padding: clamp(1.5rem, 4vw, 3rem); }
+.hero-titulo { font-size: clamp(2.4rem, 6vw, 4.6rem); line-height: 1.02; margin: 0.6rem 0 1rem; }
+.hero-capa { position: absolute; inset: 0; z-index: 0; opacity: 0.55; }
+.hero-capa > svg { width: 100%; height: 100%; display: block; }
+.hero-capa::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(10, 14, 38, 0.95) 0%, rgba(10, 14, 38, 0.75) 45%, rgba(10, 14, 38, 0.15) 100%);
+}
+.poeira-estelar { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+/* ---------- Etiquetas (chips) ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: 1px solid rgba(196, 181, 253, 0.3);
+  background: rgba(139, 92, 246, 0.1);
+  color: #ddd3ff;
+}
+.chip-cobalto { border-color: rgba(47, 91, 255, 0.45); background: rgba(47, 91, 255, 0.14); color: #c3d0ff; }
+
+/* ---------- Cartões com arte no topo ---------- */
+.cartao-arte {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--dm-raio-g);
+  border: 1px solid var(--dm-borda);
+  background: rgba(15, 22, 54, 0.82);
+  box-shadow: var(--dm-brilho);
+  transition: transform 0.3s var(--dm-ease), border-color 0.3s, box-shadow 0.3s;
+}
+.cartao-arte:hover,
+.cartao-arte:focus-within {
+  transform: translateY(-6px);
+  border-color: rgba(196, 181, 253, 0.45);
+  box-shadow: var(--dm-sombra), 0 0 30px rgba(139, 92, 246, 0.18);
+}
+.cartao-arte .arte { position: relative; aspect-ratio: 400 / 180; overflow: hidden; }
+.cartao-arte .arte > svg,
+.cartao-arte .arte > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cartao-arte .arte::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(15, 22, 54, 0.97));
+}
+.cartao-arte .corpo { padding: 0 1.4rem 1.2rem; margin-top: -1.6rem; position: relative; z-index: 1; flex: 1; }
+.cartao-arte h3 { font-size: 1.35rem; margin-bottom: 0.35rem; }
+.cartao-arte .rodape {
+  padding: 0.8rem 1.4rem;
+  border-top: 1px solid var(--dm-borda);
+  display: flex;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 2;
+}
+.cartao-arte .selo-canto { position: absolute; top: 0.9rem; right: 0.9rem; z-index: 2; }
+.cartao-arte .stretched-link::after { z-index: 1; }
+
+/* ---------- Controle segmentado ---------- */
+.segmentado {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid var(--dm-borda);
+  background: rgba(7, 11, 31, 0.55);
+}
+.segmentado button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  background: transparent;
+  color: var(--dm-texto-suave);
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, color 0.2s;
+}
+.segmentado button:hover { color: #fff; }
+.segmentado button[aria-pressed="true"] {
+  background: var(--dm-gradiente);
+  color: #fff;
+  box-shadow: 0 6px 18px -6px rgba(139, 92, 246, 0.7);
+}
+
+/* ---------- Caixas de atributo e lista com destaque ---------- */
+.caixas-atributo { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.6rem; margin: 0; }
+.caixa-atributo {
+  border: 1px solid var(--dm-borda);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+  background: rgba(7, 11, 31, 0.45);
+}
+.caixa-atributo dt {
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dm-texto-suave);
+  font-weight: 500;
+}
+.caixa-atributo dd {
+  margin: 0.15rem 0 0;
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.item-destaque {
+  border-left: 3px solid var(--dm-violeta);
+  border-radius: 0 12px 12px 0;
+  background: rgba(139, 92, 246, 0.08);
+  padding: 0.7rem 1rem;
+}
+.rotulo-secao {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--dm-estrela);
+  margin-bottom: 0.6rem;
+}
+
+/* ---------- Aviso ---------- */
+.aviso-astral {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--dm-raio);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.1);
+  color: #e3dcff;
+}
+
+/* ---------- Navegação do cabeçalho ---------- */
+.nav-campanha { display: flex; gap: 0.15rem; overflow-x: auto; scrollbar-width: none; }
+.nav-campanha::-webkit-scrollbar { display: none; }
+.nav-campanha a {
+  position: relative;
+  padding: 0.45rem 0.85rem;
+  color: var(--dm-texto-suave);
+  text-decoration: none;
+  white-space: nowrap;
+  font-weight: 500;
+  font-size: 1.04rem;
+}
+.nav-campanha a:hover,
+.nav-campanha a.active { color: #fff; }
+.nav-campanha a.active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 22px;
+  height: 2px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  background: var(--dm-gradiente);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.9);
+}
+.botao-busca {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0.45rem 0.3rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--dm-borda);
+  background: rgba(7, 11, 31, 0.5);
+  color: var(--dm-texto-suave);
+  font-size: 0.98rem;
+}
+.botao-busca:hover { border-color: rgba(196, 181, 253, 0.5); color: #fff; }
+
+/* ---------- Dados poligonais ---------- */
+.dado-svg { display: block; overflow: visible; }
+.dado-svg .forma polygon,
+.dado-svg .forma rect,
+.dado-svg .forma circle {
+  fill: color-mix(in srgb, var(--dado) 18%, #0b1030);
+  stroke: var(--dado);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+.dado-svg .forma .faceta { fill: none; stroke: var(--dado); stroke-width: 1.6; opacity: 0.45; }
+.dado-svg text { fill: #fff; font-family: 'Cinzel', Georgia, serif; font-weight: 700; }
+.dado-svg.destaque .forma > :first-child { filter: drop-shadow(0 0 7px var(--dado)); }
+.dado-svg.minimo .forma > :first-child { stroke: #f87171; }
+.dado-svg.descartado { opacity: 0.35; }
+.btn-dado .dado-svg { width: 30px; height: 30px; }
+.btn.btn-dado {
+  --bs-btn-padding-x: 0.25rem;
+  --bs-btn-padding-y: 0.2rem;
+  border-radius: 12px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+/* ---------- Revelação suave ao entrar ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .surgir { animation: surgir 0.6s var(--dm-ease) both; }
+  .surgir-2 { animation-delay: 0.08s; }
+  .surgir-3 { animation-delay: 0.16s; }
+}
+@keyframes surgir {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
