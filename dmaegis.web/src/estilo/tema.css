@@ -445,6 +445,77 @@ h1, h2, h3, .h1, .h2, .h3, .navbar-brand, .titulo-runico {
   box-shadow: inset 3px 0 0 var(--dm-violeta);
 }
 
+/* ---------- Rolador de dados ---------- */
+
+.btn-dado {
+  --bs-btn-padding-x: 0.32rem;
+  --bs-btn-font-size: 0.78rem;
+  --bs-btn-color: #d5ddff;
+  --bs-btn-border-color: rgba(var(--dm-cobalto-rgb), 0.5);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(var(--dm-violeta-rgb), 0.3);
+  --bs-btn-hover-border-color: var(--dm-violeta);
+  --bs-btn-active-bg: rgba(var(--dm-violeta-rgb), 0.5);
+  --bs-btn-active-border-color: var(--dm-violeta);
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+}
+
+.resultado-dados {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(var(--dm-violeta-rgb), 0.1);
+  border: 1px solid rgba(var(--dm-violeta-rgb), 0.35);
+}
+
+.total-dados {
+  font-family: 'Cinzel', Georgia, serif;
+  font-weight: 700;
+  font-size: 2.1rem;
+  line-height: 1;
+  min-width: 2.5ch;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 0 14px rgba(var(--dm-violeta-rgb), 0.85);
+}
+
+.dado-resultado {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  padding: 0 0.35rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  background: rgba(var(--dm-cobalto-rgb), 0.18);
+  border: 1px solid rgba(var(--dm-cobalto-rgb), 0.5);
+}
+
+.dado-resultado.maximo {
+  border-color: var(--dm-estrela);
+  box-shadow: 0 0 10px rgba(var(--dm-violeta-rgb), 0.8);
+  color: #fff;
+}
+
+.dado-resultado.minimo {
+  border-color: rgba(248, 113, 113, 0.7);
+  color: #fecaca;
+}
+
+.dado-resultado.descartado {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.historico-dados {
+  color: var(--dm-texto-suave);
+}
+
+.historico-dados:hover {
+  color: var(--dm-estrela);
+}
+
 kbd {
   background: rgba(var(--dm-violeta-rgb), 0.2);
   border: 1px solid rgba(var(--dm-violeta-rgb), 0.45);

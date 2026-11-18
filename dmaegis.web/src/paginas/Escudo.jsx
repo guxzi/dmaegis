@@ -6,6 +6,7 @@ import { criarSessao, listarSessoes, obterSessao } from '../api/sessoes.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
 import { useCaderno } from '../caderno/useCaderno.js';
+import RoladorDados from '../dados/RoladorDados.jsx';
 import Cabecalho from '../componentes/Cabecalho.jsx';
 import { sessaoPadrao } from '../escudo/atalhos.js';
 import CartaoRegistro from '../escudo/CartaoRegistro.jsx';
@@ -130,10 +131,10 @@ export default function Escudo() {
                   {idSessao && <PainelAnotacoes key={idSessao} idSessao={idSessao} />}
                 </div>
               </div>
-              <div className="card flex-shrink-0">
-                <div className="card-body py-3">
-                  <span className="titulo-runico">Dados</span>
-                  <p className="text-secondary small mb-0 mt-1">O rolador de dados chega na próxima etapa.</p>
+              <div className="card painel-escudo flex-shrink-0" style={{ height: 300 }}>
+                <div className="card-header"><span className="titulo-runico">Dados</span></div>
+                <div className="card-body d-flex flex-column" style={{ minHeight: 0 }}>
+                  <RoladorDados />
                 </div>
               </div>
             </div>
