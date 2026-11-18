@@ -25,12 +25,17 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<IAtributoRegistroRepository, AtributoRegistroRepository>();
         services.AddScoped<ITagRepository, TagRepository>();
         services.AddScoped<IRegistroTagRepository, RegistroTagRepository>();
+        services.AddScoped<ISessaoRepository, SessaoRepository>();
+        services.AddScoped<ICenaSessaoRepository, CenaSessaoRepository>();
+        services.AddScoped<ISessaoRegistroRepository, SessaoRegistroRepository>();
+        services.AddScoped<ISegredoRepository, SegredoRepository>();
 
         // Services
         services.AddScoped<ISaudeService, SaudeService>();
         services.AddScoped<IUsuarioService, UsuarioService>();
         services.AddScoped<ICampanhaService, CampanhaService>();
         services.AddScoped<IRegistroService, RegistroService>();
+        services.AddScoped<ISessaoService, SessaoService>();
 
         // Validators (todos os AbstractValidator deste projeto)
         services.AddValidatorsFromAssemblyContaining<LoginValidator>();
