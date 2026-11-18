@@ -26,6 +26,9 @@
   --bs-btn-padding-y: 0.55rem;
 }
 .btn-primary:hover { transform: translateY(-1px); }
+/* Dentro de grupos de campo, botão segue o canto do campo (sem pílula). */
+.input-group > .btn { border-radius: var(--bs-border-radius); font-size: 0.8rem; }
+.input-group > .btn:hover { transform: none; }
 .btn-link { font-family: inherit; letter-spacing: 0; }
 .btn-fantasma {
   --bs-btn-color: #e6e9ff;
@@ -302,10 +305,25 @@
 .dado-svg.destaque .forma > :first-child { filter: drop-shadow(0 0 7px var(--dado)); }
 .dado-svg.minimo .forma > :first-child { stroke: #f87171; }
 .dado-svg.descartado { opacity: 0.35; }
-.btn-dado .dado-svg { width: 30px; height: 30px; }
+.btn-dado .dado-svg { width: 36px; height: 36px; transition: transform 0.2s var(--dm-ease), filter 0.2s; }
+.btn-dado:hover .dado-svg,
+.btn-dado:focus-visible .dado-svg { transform: translateY(-2px) rotate(-6deg); filter: drop-shadow(0 0 6px var(--dado)); }
+.legenda-dado {
+  font-size: 0.55rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dm-estrela);
+}
 .btn.btn-dado {
-  --bs-btn-padding-x: 0.25rem;
-  --bs-btn-padding-y: 0.2rem;
+  --bs-btn-padding-x: 0.1rem;
+  --bs-btn-padding-y: 0.1rem;
+  --bs-btn-border-color: transparent;
+  --bs-btn-bg: transparent;
+  --bs-btn-hover-bg: rgba(139, 92, 246, 0.12);
+  --bs-btn-hover-border-color: transparent;
+  --bs-btn-active-bg: rgba(139, 92, 246, 0.25);
+  --bs-btn-active-border-color: transparent;
   border-radius: 12px;
   display: inline-flex;
   flex-direction: column;

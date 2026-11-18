@@ -1,28 +1,32 @@
 import { useState } from 'react';
+import DadoSvg from './DadoSvg.jsx';
 import { ErroNotacao } from './notacao.js';
 import { adicionarAoHistorico, expressaoRapida, formatarRolagem, rolar } from './rolar.js';
 
 const BOTOES = [
-  { id: 'd20', rotulo: 'd20' },
-  { id: 'vantagem', rotulo: 'Vant.', titulo: 'Vantagem: 2d20, fica o maior' },
-  { id: 'desvantagem', rotulo: 'Desv.', titulo: 'Desvantagem: 2d20, fica o menor' },
-  { id: 'd12', rotulo: 'd12' },
-  { id: 'd10', rotulo: 'd10' },
-  { id: 'd8', rotulo: 'd8' },
-  { id: 'd6', rotulo: 'd6' },
-  { id: 'd4', rotulo: 'd4' },
-  { id: 'd100', rotulo: 'd100' },
+  { id: 'd20', faces: 20 },
+  { id: 'vantagem', faces: 20, legenda: 'vant', titulo: 'Vantagem: 2d20, fica o maior' },
+  { id: 'desvantagem', faces: 20, legenda: 'desv', titulo: 'Desvantagem: 2d20, fica o menor' },
+  { id: 'd12', faces: 12 },
+  { id: 'd10', faces: 10 },
+  { id: 'd8', faces: 8 },
+  { id: 'd6', faces: 6 },
+  { id: 'd4', faces: 4 },
+  { id: 'd100', faces: 100 },
 ];
 
 let proximoId = 1;
 
-// Um dado do resultado: máximo brilha, 1 fica avermelhado, descartado fica riscado.
+// Um dado do resultado, desenhado como poliedro: máximo brilha, 1 fica com borda vermelha, descartado fica apagado.
 function Dado({ dado, faces }) {
-  const classes = ['dado-resultado'];
-  if (!dado.mantido) classes.push('descartado');
-  else if (dado.valor === faces && faces > 1) classes.push('maximo');
-  else if (dado.valor === 1 && faces > 1) classes.push('minimo');
-  return <span className={classes.join(' ')} title={dado.mantido ? `d${faces}` : `d${faces} descartado`}>{dado.valor}</span>;
+  let estado = '';
+  if (!dado.mantido) estado = 'descartado';
+  else if (dado.valor === faces && faces > 1) estado = 'destaque';
+  else if (dado.valor === 1 && faces > 1) estado = 'minimo';
+  return (
+    <DadoSvg faces={faces} valor={dado.valor} tamanho={36} estado={estado}
+      rotulo={`d${faces}: ${dado.valor}${dado.mantido ? '' : ' (descartado)'}`} />
+  );
 }
 
 function Detalhe({ resultado }) {
@@ -91,8 +95,9 @@ export default function RoladorDados() {
           min={-99} max={99} value={modificador} onChange={(e) => setModificador(e.target.value)} />
         {BOTOES.map((b) => (
           <button key={b.id} type="button" className="btn btn-sm btn-dado" title={b.titulo ?? `Rolar 1${b.id}`}
-            onClick={() => rapido(b.id)}>
-            {b.rotulo}
+            aria-label={b.titulo ?? `Rolar 1${b.id}`} onClick={() => rapido(b.id)}>
+            <DadoSvg faces={b.faces} tamanho={30} />
+            {b.legenda && <span className="legenda-dado">{b.legenda}</span>}
           </button>
         ))}
       </div>

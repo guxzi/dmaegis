@@ -6,6 +6,7 @@ import { Carregando } from '../auth/RotaProtegida.jsx';
 import { useCaderno } from '../caderno/useCaderno.js';
 import Cabecalho from '../componentes/Cabecalho.jsx';
 import { formatarData } from '../sessoes/passos.js';
+import CabecalhoSecao from '../visual/CabecalhoSecao.jsx';
 
 export default function Sessoes() {
   const { id } = useParams();
@@ -44,27 +45,40 @@ export default function Sessoes() {
     <>
       <Cabecalho idCampanha={id} />
       <main className="container pb-5">
-        <Link to={`/campanhas/${id}`} className="d-inline-block mb-3 text-decoration-none">← {campanha?.nome ?? 'Campanha'}</Link>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h1 className="h3 mb-0">Sessões</h1>
-          <button type="button" className="btn btn-primary" onClick={nova} disabled={criando}>
-            {criando ? 'Criando…' : 'Nova sessão'}
-          </button>
-        </div>
+        <CabecalhoSecao
+          chamada={campanha?.nome ?? 'Campanha'}
+          titulo="Sessões"
+          subtitulo="Prepare cada sessão nos 8 passos. Os segredos não revelados seguem para a próxima."
+          acoes={(
+            <button type="button" className="btn btn-primary btn-lg" onClick={nova} disabled={criando}>
+              {criando ? 'Criando…' : 'Nova sessão'}
+            </button>
+          )}
+        />
 
         {erro && <div className="alert alert-danger" role="alert">{erro}</div>}
         {sessoes === null && !erro && <Carregando />}
-        {sessoes?.length === 0 && <p className="text-secondary">Nenhuma sessão ainda.</p>}
+        {sessoes?.length === 0 && <div className="aviso-astral">Nenhuma sessão ainda. Crie a primeira!</div>}
 
-        <div className="list-group">
-          {sessoes?.map((s) => (
-            <Link key={s.id} to={`/campanhas/${id}/sessoes/${s.id}`} className="list-group-item list-group-item-action">
-              <div className="d-flex justify-content-between">
-                <span className="fw-semibold">Sessão {s.numero}</span>
-                <span className="text-secondary small">{formatarData(s.data)}</span>
+        <div className="d-grid gap-3">
+          {sessoes?.map((s, i) => (
+            <div key={s.id} className="cartao-registro surgir" style={{ '--cor-tipo': i === 0 ? '#c4b5fd' : '#60a5fa' }}>
+              <div className="d-flex flex-wrap align-items-center gap-3">
+                <span className="selo-escudo" style={{ fontSize: '1.05rem' }}>{s.numero}</span>
+                <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                  <div className="d-flex flex-wrap align-items-baseline gap-2">
+                    <h3 className="mb-0">Sessão {s.numero}</h3>
+                    {i === 0 && <span className="chip">mais recente</span>}
+                    {s.data && <span className="text-secondary small">{formatarData(s.data)}</span>}
+                  </div>
+                  <p className="resumo mb-0">{s.comecoForte || 'Sem começo forte ainda.'}</p>
+                </div>
+                <div className="d-flex gap-2 position-relative" style={{ zIndex: 2 }}>
+                  <Link to={`/campanhas/${id}/escudo?sessao=${s.id}`} className="btn btn-sm btn-primary">Escudo</Link>
+                  <Link to={`/campanhas/${id}/sessoes/${s.id}`} className="btn btn-sm btn-fantasma">Preparar</Link>
+                </div>
               </div>
-              {s.comecoForte && <div className="text-secondary small text-truncate">{s.comecoForte}</div>}
-            </Link>
+            </div>
           ))}
         </div>
       </main>

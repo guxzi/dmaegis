@@ -16,7 +16,7 @@ export default function FormularioConta({ titulo, erro, enviando, textoBotao, ao
         <div className="row align-items-center g-5" style={{ minHeight: 'calc(100vh - 6rem)' }}>
           <div className="col-lg-7 surgir">
             <span className="chamada">O escudo do mestre</span>
-            <h1 className="hero-titulo titulo-estelar">
+            <h1 className="hero-titulo titulo-estelar" style={{ fontSize: 'clamp(3.2rem, 8vw, 6.2rem)' }}>
               DM<span className="destaque">Aegis</span>
             </h1>
             <p className="fs-5 text-secondary mb-4" style={{ maxWidth: 560 }}>

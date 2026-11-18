@@ -39,7 +39,8 @@ export default function RegistroEditar() {
       <Cabecalho idCampanha={id} />
       <main className="container pb-5" style={{ maxWidth: 860 }}>
         <Link to={voltar} className="d-inline-block mb-3 text-decoration-none">← Voltar</Link>
-        <h1 className="h3 mb-3">{editando ? 'Editar registro' : 'Novo registro'}</h1>
+        <span className="chamada">Caderno</span>
+        <h1 className="titulo-estelar mt-1 mb-4" style={{ fontSize: 'clamp(2rem, 4vw, 2.6rem)' }}>{editando ? 'Editar registro' : 'Novo registro'}</h1>
         {(erro || erroCaderno) && <div className="alert alert-danger" role="alert">{erro || erroCaderno}</div>}
         {!pronto && !erro && !erroCaderno && <Carregando />}
         {pronto && (

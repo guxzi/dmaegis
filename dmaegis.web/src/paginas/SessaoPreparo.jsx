@@ -27,7 +27,7 @@ function Passo({ numero, titulo, children }) {
   return (
     <section className="card mb-3">
       <div className="card-body">
-        <h2 className="h6 text-uppercase text-secondary mb-3 d-flex align-items-center">
+        <h2 className="h6 text-uppercase mb-3 d-flex align-items-center" style={{ color: "var(--dm-estrela)", letterSpacing: "0.12em" }}>
           <span className="selo-escudo me-2">{numero}</span>{titulo}
         </h2>
         {children}
@@ -130,13 +130,16 @@ export default function SessaoPreparo() {
       <main className="container" style={{ maxWidth: 900, paddingBottom: 96 }}>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <Link to={`/campanhas/${id}/sessoes`} className="text-decoration-none">← Sessões</Link>
-          <Link to={`/campanhas/${id}/escudo?sessao=${idSessao}`} className="btn btn-sm btn-outline-primary">Abrir no escudo</Link>
+          <Link to={`/campanhas/${id}/escudo?sessao=${idSessao}`} className="btn btn-sm btn-primary">Abrir no escudo</Link>
         </div>
         {erro && <div className="alert alert-danger" role="alert">{erro}</div>}
         {!form || !campanha ? (!erro && <Carregando />) : (
           <>
             <div className="d-flex flex-wrap align-items-end gap-3 mb-4">
-              <h1 className="h3 mb-0 me-auto">Sessão {form.numero}</h1>
+              <div className="me-auto">
+                <span className="chamada">Preparo nos 8 passos</span>
+                <h1 className="titulo-estelar mb-0 mt-1" style={{ fontSize: "clamp(2rem, 4vw, 2.7rem)" }}>Sessão {form.numero}</h1>
+              </div>
               <div>
                 <label htmlFor="numeroSessao" className="form-label small mb-1">Número</label>
                 <input id="numeroSessao" type="number" min={1} max={9999} className="form-control form-control-sm" style={{ width: 90 }}
