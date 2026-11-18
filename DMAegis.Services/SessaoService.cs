@@ -121,7 +121,10 @@ public class SessaoService : ISessaoService
     public async Task<AnotacaoServiceModel> InserirAnotacaoAsync(int idUsuario, int idSessao, string texto)
     {
         await ObterSessaoDoUsuarioOuLancarAsync(idUsuario, idSessao);
-        var anotacao = new AnotacaoSessao { IdSessao = idSessao, Data = DateTime.Now, Texto = texto.Trim() };
+        // Corta no segundo e sem fuso, igual ao que o DATETIME do MySQL devolve depois.
+        var agora = DateTime.Now;
+        var data = new DateTime(agora.Year, agora.Month, agora.Day, agora.Hour, agora.Minute, agora.Second, DateTimeKind.Unspecified);
+        var anotacao = new AnotacaoSessao { IdSessao = idSessao, Data = data, Texto = texto.Trim() };
         anotacao.Id = await _anotacaoRepository.InserirAsync(anotacao);
         return ParaServiceModel(anotacao);
     }

@@ -76,7 +76,7 @@ export default function RegistroDetalhe() {
 
   return (
     <>
-      <Cabecalho />
+      <Cabecalho idCampanha={id} />
       <main className="container pb-5">
         <Link to={`/campanhas/${id}/caderno`} className="d-inline-block mb-3 text-decoration-none">← Caderno</Link>
         {erro && <div className="alert alert-danger" role="alert">{erro}</div>}

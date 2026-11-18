@@ -36,7 +36,7 @@ export default function RegistroEditar() {
 
   return (
     <>
-      <Cabecalho />
+      <Cabecalho idCampanha={id} />
       <main className="container pb-5" style={{ maxWidth: 860 }}>
         <Link to={voltar} className="d-inline-block mb-3 text-decoration-none">← Voltar</Link>
         <h1 className="h3 mb-3">{editando ? 'Editar registro' : 'Novo registro'}</h1>

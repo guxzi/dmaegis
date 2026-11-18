@@ -98,18 +98,18 @@ export default function CampanhaDetalhe() {
         {campanha.descricao
           ? <p style={{ whiteSpace: 'pre-line' }}>{campanha.descricao}</p>
           : <p className="text-secondary fst-italic">Sem descrição.</p>}
-        <div className="d-flex gap-2 mt-4">
-          <Link to={`/campanhas/${campanha.id}/caderno`} className="btn btn-primary">Abrir caderno</Link>
+        <div className="d-flex flex-wrap gap-2 mt-4">
+          <Link to={`/campanhas/${campanha.id}/escudo`} className="btn btn-primary">Abrir escudo</Link>
+          <Link to={`/campanhas/${campanha.id}/caderno`} className="btn btn-outline-primary">Caderno</Link>
           <Link to={`/campanhas/${campanha.id}/sessoes`} className="btn btn-outline-primary">Sessões</Link>
         </div>
-        <p className="text-secondary small mt-3">O escudo chega na próxima etapa.</p>
       </>
     );
   }
 
   return (
     <>
-      <Cabecalho />
+      <Cabecalho idCampanha={id} />
       <main className="container pb-5">
         <Link to="/" className="d-inline-block mb-3 text-decoration-none">← Campanhas</Link>
         {erro && <div className="alert alert-danger" role="alert">{erro}</div>}

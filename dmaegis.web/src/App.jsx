@@ -8,6 +8,7 @@ import Cadastro from './paginas/Cadastro.jsx';
 import Entrar from './paginas/Entrar.jsx';
 import RegistroDetalhe from './paginas/RegistroDetalhe.jsx';
 import RegistroEditar from './paginas/RegistroEditar.jsx';
+import Escudo from './paginas/Escudo.jsx';
 import SessaoPreparo from './paginas/SessaoPreparo.jsx';
 import Sessoes from './paginas/Sessoes.jsx';
 
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/campanhas/:id/caderno/:idRegistro/editar" element={protegida(<RegistroEditar />)} />
         <Route path="/campanhas/:id/sessoes" element={protegida(<Sessoes />)} />
         <Route path="/campanhas/:id/sessoes/:idSessao" element={protegida(<SessaoPreparo />)} />
+        <Route path="/campanhas/:id/escudo" element={protegida(<Escudo />)} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

@@ -42,7 +42,7 @@ export default function Sessoes() {
 
   return (
     <>
-      <Cabecalho />
+      <Cabecalho idCampanha={id} />
       <main className="container pb-5">
         <Link to={`/campanhas/${id}`} className="d-inline-block mb-3 text-decoration-none">← {campanha?.nome ?? 'Campanha'}</Link>
         <div className="d-flex justify-content-between align-items-center mb-3">

@@ -126,9 +126,12 @@ export default function SessaoPreparo() {
 
   return (
     <>
-      <Cabecalho />
+      <Cabecalho idCampanha={id} />
       <main className="container" style={{ maxWidth: 900, paddingBottom: 96 }}>
-        <Link to={`/campanhas/${id}/sessoes`} className="d-inline-block mb-3 text-decoration-none">← Sessões</Link>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <Link to={`/campanhas/${id}/sessoes`} className="text-decoration-none">← Sessões</Link>
+          <Link to={`/campanhas/${id}/escudo?sessao=${idSessao}`} className="btn btn-sm btn-outline-primary">Abrir no escudo</Link>
+        </div>
         {erro && <div className="alert alert-danger" role="alert">{erro}</div>}
         {!form || !campanha ? (!erro && <Carregando />) : (
           <>
