@@ -18,4 +18,8 @@ public static class BusinessErrors
     public static readonly (int Code, string DefaultMessage) SessaoNaoEncontrada = (10, "Sessão não encontrada.");
     public static readonly (int Code, string DefaultMessage) SegredoNaoEncontrado = (11, "Segredo não encontrado.");
     public static readonly (int Code, string DefaultMessage) AnotacaoNaoEncontrada = (12, "Anotação não encontrada.");
+    public static readonly (int Code, string DefaultMessage) ImagemNaoEncontrada = (13, "Imagem não encontrada.");
+    public static readonly (int Code, string DefaultMessage) ImagemInvalida = (14, "Envie uma imagem JPEG, PNG, WebP ou GIF.");
+    public static readonly (int Code, string DefaultMessage) ImagemGrandeDemais = (15, "A imagem pode ter até 15 MB.");
+    public static readonly (int Code, string DefaultMessage) LimiteImagens = (16, "Um registro pode ter até 30 imagens.");
 }

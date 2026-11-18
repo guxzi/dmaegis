@@ -89,6 +89,7 @@ erDiagram
 | `tb_segredo` | Passo 4: pertence à **campanha**. Fica pendente enquanto `co_sessao_revelacao` for nulo, por isso aparece em todas as sessões até ser revelado. |
 | `tb_sessao_registro` | Passos 5 a 8: locais, NPCs, criaturas e itens ligados à sessão. |
 | `tb_anotacao_sessao` | Anotações com horário, feitas durante a sessão. |
+| `tb_imagem_registro` | Imagens (mapas) anexadas a um registro, com título, tipo detectado pelos bytes, tamanho, ordem e o conteúdo em `bi_conteudo` (MEDIUMBLOB, até 15 MB). Script `05_imagens.sql`. Some com o registro (CASCADE). |
 
 ## Exclusões
 
