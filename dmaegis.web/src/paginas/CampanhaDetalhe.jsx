@@ -100,8 +100,9 @@ export default function CampanhaDetalhe() {
           : <p className="text-secondary fst-italic">Sem descrição.</p>}
         <div className="d-flex gap-2 mt-4">
           <Link to={`/campanhas/${campanha.id}/caderno`} className="btn btn-primary">Abrir caderno</Link>
+          <Link to={`/campanhas/${campanha.id}/sessoes`} className="btn btn-outline-primary">Sessões</Link>
         </div>
-        <p className="text-secondary small mt-3">As sessões e o escudo chegam nas próximas etapas.</p>
+        <p className="text-secondary small mt-3">O escudo chega na próxima etapa.</p>
       </>
     );
   }
