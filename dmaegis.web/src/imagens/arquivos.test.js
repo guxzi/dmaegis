@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { formatarTamanho, tituloDoArquivo, validarArquivo } from './arquivos.js';
+import { formatarTamanho, tituloDoArquivo, validarArquivo, nomeArquivoDownload } from './arquivos.js';
 
 test('tituloDoArquivo tira a extensão e limpa separadores', () => {
   expect(tituloDoArquivo('Prisao do Porto - DM Version.jpg')).toBe('Prisao do Porto DM Version');
@@ -18,4 +18,11 @@ test('formatarTamanho', () => {
   expect(formatarTamanho(475136)).toBe('464 KB');
   expect(formatarTamanho(12178842)).toBe('11,6 MB');
   expect(formatarTamanho(512)).toBe('1 KB');
+});
+
+test('nomeArquivoDownload: limpa o título e põe a extensão do tipo', () => {
+  expect(nomeArquivoDownload('Retrato: o capitão?', 'image/jpeg')).toBe('Retrato o capitão.jpg');
+  expect(nomeArquivoDownload('mapa/porto', 'image/png')).toBe('mapa porto.png');
+  expect(nomeArquivoDownload('  ', 'image/webp')).toBe('imagem.webp');
+  expect(nomeArquivoDownload('animado', 'image/gif')).toBe('animado.gif');
 });

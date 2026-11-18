@@ -21,3 +21,11 @@ export function formatarTamanho(bytes) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`;
 }
+
+const EXTENSAO = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
+
+// Nome para o "Baixar": sem os caracteres que o Windows recusa, com a extensão do tipo real.
+export function nomeArquivoDownload(titulo, tipo) {
+  const limpo = (titulo ?? '').replace(/[\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return `${limpo || 'imagem'}.${EXTENSAO[tipo] ?? 'img'}`;
+}
