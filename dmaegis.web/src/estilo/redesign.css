@@ -725,3 +725,4 @@
 }
 .mencao:hover,
 .mencao:focus-visible { background: rgba(var(--dm-violeta-rgb), 0.32); color: #fff; }
+.acoes-imagem .btn { display: inline-flex; align-items: center; gap: 0.35rem; }

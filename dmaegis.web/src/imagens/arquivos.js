@@ -29,3 +29,10 @@ export function nomeArquivoDownload(titulo, tipo) {
   const limpo = (titulo ?? '').replace(/[\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
   return `${limpo || 'imagem'}.${EXTENSAO[tipo] ?? 'img'}`;
 }
+
+// Tamanho da imagem copiada: no máximo 2048 px no lado maior, para caber no chat dos jogadores
+// (um mapa de 5120 px viraria um PNG de uns 30 MB). Imagens menores ficam como estão.
+export function dimensoesParaCopiar(largura, altura, maximo = 2048) {
+  const escala = Math.min(1, maximo / Math.max(largura, altura));
+  return { largura: Math.round(largura * escala), altura: Math.round(altura * escala) };
+}

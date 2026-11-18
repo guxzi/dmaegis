@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { formatarTamanho, tituloDoArquivo, validarArquivo, nomeArquivoDownload } from './arquivos.js';
+import { formatarTamanho, tituloDoArquivo, validarArquivo, nomeArquivoDownload, dimensoesParaCopiar } from './arquivos.js';
 
 test('tituloDoArquivo tira a extensão e limpa separadores', () => {
   expect(tituloDoArquivo('Prisao do Porto - DM Version.jpg')).toBe('Prisao do Porto DM Version');
@@ -25,4 +25,11 @@ test('nomeArquivoDownload: limpa o título e põe a extensão do tipo', () => {
   expect(nomeArquivoDownload('mapa/porto', 'image/png')).toBe('mapa porto.png');
   expect(nomeArquivoDownload('  ', 'image/webp')).toBe('imagem.webp');
   expect(nomeArquivoDownload('animado', 'image/gif')).toBe('animado.gif');
+});
+
+test('dimensoesParaCopiar: reduz para caber em 2048 px no lado maior, sem aumentar as pequenas', () => {
+  expect(dimensoesParaCopiar(5120, 5120)).toEqual({ largura: 2048, altura: 2048 });
+  expect(dimensoesParaCopiar(4000, 2000)).toEqual({ largura: 2048, altura: 1024 });
+  expect(dimensoesParaCopiar(1000, 3000)).toEqual({ largura: 683, altura: 2048 });
+  expect(dimensoesParaCopiar(800, 600)).toEqual({ largura: 800, altura: 600 });
 });

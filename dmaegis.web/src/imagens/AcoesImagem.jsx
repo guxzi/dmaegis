@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { urlDaImagem } from '../api/imagens.js';
 import { mostrarNaProjecao } from '../projecao/canal.js';
-import { nomeArquivoDownload } from './arquivos.js';
+import { dimensoesParaCopiar, nomeArquivoDownload } from './arquivos.js';
+import { IconeBaixar, IconeCopiar, IconeProjetar } from './Icones.jsx';
 
-// A área de transferência só aceita PNG com segurança: a imagem passa por um canvas antes de ser copiada.
+// A área de transferência só aceita PNG com segurança: a imagem passa por um canvas (já reduzida) antes de ser copiada.
 async function imagemEmPng(id) {
   const resposta = await fetch(urlDaImagem(id), { credentials: 'same-origin' });
   if (!resposta.ok) throw new Error('falha ao baixar');
   const original = await resposta.blob();
-  if (original.type === 'image/png') return original;
   const bitmap = await createImageBitmap(original);
+  const { largura, altura } = dimensoesParaCopiar(bitmap.width, bitmap.height);
+  if (original.type === 'image/png' && largura === bitmap.width) return original;
   const canvas = document.createElement('canvas');
-  canvas.width = bitmap.width;
-  canvas.height = bitmap.height;
-  canvas.getContext('2d').drawImage(bitmap, 0, 0);
+  canvas.width = largura;
+  canvas.height = altura;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, largura, altura);
   return new Promise((resolver, rejeitar) =>
     canvas.toBlob((png) => (png ? resolver(png) : rejeitar(new Error('falha ao converter'))), 'image/png'));
 }
@@ -54,15 +56,15 @@ export default function AcoesImagem({ imagem, comOpcaoTitulo = false, compacto =
     <div className="acoes-imagem">
       <button type="button" className={`btn btn-sm btn-primary${compacto ? ' px-2' : ''}`} onClick={mostrar}
         title="Mostrar na janela de projeção" aria-label={`Mostrar ${imagem.titulo} aos jogadores`}>
-        {compacto ? '📽' : '📽 Mostrar aos jogadores'}
+        <IconeProjetar />{!compacto && ' Mostrar aos jogadores'}
       </button>
       <button type="button" className={classe} onClick={copiar} title="Copiar a imagem"
         aria-label={`Copiar ${imagem.titulo}`}>
-        {compacto ? '⧉' : '⧉ Copiar'}
+        <IconeCopiar />{!compacto && ' Copiar'}
       </button>
       <a className={classe} href={urlDaImagem(imagem.id)} download={nomeArquivoDownload(imagem.titulo, imagem.tipoConteudo)}
         title="Baixar a imagem" aria-label={`Baixar ${imagem.titulo}`}>
-        {compacto ? '⤓' : '⤓ Baixar'}
+        <IconeBaixar />{!compacto && ' Baixar'}
       </a>
       {comOpcaoTitulo && (
         <div className="form-check form-check-inline small mb-0 ms-1">
