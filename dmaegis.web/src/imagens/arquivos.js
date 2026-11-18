@@ -1,7 +1,7 @@
 export const TAMANHO_MAXIMO = 15 * 1024 * 1024;
 const TIPOS = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// "Gearhole Prison - DM Version.jpg" → "Gearhole Prison DM Version"
+// "Prisao do Porto - DM Version.jpg" → "Prisao do Porto DM Version"
 export function tituloDoArquivo(nome) {
   return nome
     .replace(/\.[^.]+$/, '')
