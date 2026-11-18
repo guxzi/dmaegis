@@ -17,4 +17,5 @@ public static class BusinessErrors
     public static readonly (int Code, string DefaultMessage) SessaoNumeroDuplicado = (9, "Já existe uma sessão com esse número.");
     public static readonly (int Code, string DefaultMessage) SessaoNaoEncontrada = (10, "Sessão não encontrada.");
     public static readonly (int Code, string DefaultMessage) SegredoNaoEncontrado = (11, "Segredo não encontrado.");
+    public static readonly (int Code, string DefaultMessage) AnotacaoNaoEncontrada = (12, "Anotação não encontrada.");
 }

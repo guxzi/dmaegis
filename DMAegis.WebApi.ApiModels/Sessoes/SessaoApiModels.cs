@@ -59,3 +59,18 @@ public class SegredoResponseApiModel
     public int? IdSessaoRevelacao { get; set; }
     public DateTime? DataRevelacao { get; set; }
 }
+
+public class SalvarAnotacaoRequestApiModel
+{
+    public string Texto { get; set; } = string.Empty;
+}
+
+public class AnotacaoResponseApiModel
+{
+    public int Id { get; set; }
+
+    /// <summary>Horário do servidor, sem fuso ("yyyy-MM-ddTHH:mm:ss").</summary>
+    public DateTime Data { get; set; }
+
+    public string Texto { get; set; } = string.Empty;
+}

@@ -152,6 +152,19 @@ public class RegistroControllerTests
     }
 
     [Fact]
+    public async Task Busca_RepassaTermo()
+    {
+        _api.Registros.Setup(s => s.BuscarAsync(7, 1, "gob"))
+            .ReturnsAsync([new RegistroResumoServiceModel { Id = 4, IdTipoRegistro = 3, Nome = "Goblin" }]);
+        var cliente = await _api.CriarClienteLogadoAsync();
+
+        var resposta = await cliente.GetAsync("/api/campanhas/1/busca?q=gob");
+
+        Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+        Assert.Equal("Goblin", (await LerEnvelopeAsync(resposta)).GetProperty("data")[0].GetProperty("nome").GetString());
+    }
+
+    [Fact]
     public async Task Excluir_Responde200()
     {
         var cliente = await _api.CriarClienteLogadoAsync();

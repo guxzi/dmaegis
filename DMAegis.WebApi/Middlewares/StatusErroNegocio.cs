@@ -17,6 +17,7 @@ public static class StatusErroNegocio
         [BusinessErrors.SessaoNumeroDuplicado.Code] = StatusCodes.Status409Conflict,
         [BusinessErrors.SessaoNaoEncontrada.Code] = StatusCodes.Status404NotFound,
         [BusinessErrors.SegredoNaoEncontrado.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.AnotacaoNaoEncontrada.Code] = StatusCodes.Status404NotFound,
     };
 
     public static int Obter(int code) =>

@@ -14,6 +14,7 @@ public class SessaoServiceTests
     private readonly Mock<ISegredoRepository> _segredos = new();
     private readonly Mock<IRegistroRepository> _registros = new();
     private readonly Mock<ICampanhaService> _campanhas = new();
+    private readonly Mock<IAnotacaoSessaoRepository> _anotacoes = new();
 
     public SessaoServiceTests()
     {
@@ -42,7 +43,7 @@ public class SessaoServiceTests
     }
 
     private SessaoService CriarService() => new(_sessoes.Object, _cenas.Object, _vinculos.Object,
-        _segredos.Object, _registros.Object, _campanhas.Object);
+        _segredos.Object, _registros.Object, _campanhas.Object, _anotacoes.Object);
 
     private static SalvarSessaoServiceModel Preparo(params int[] idsRegistro) => new()
     {
@@ -219,5 +220,54 @@ public class SessaoServiceTests
         Assert.Equal(codigo, await CodigoAsync(() => service.ExcluirSegredoAsync(1, 60)));
         _segredos.Verify(s => s.AtualizarAsync(It.IsAny<Segredo>()), Times.Never);
         _segredos.Verify(s => s.ExcluirAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task InserirAnotacaoAsync_AparaTextoEUsaHoraDoServidor()
+    {
+        AnotacaoSessao? gravada = null;
+        _anotacoes.Setup(a => a.InserirAsync(It.IsAny<AnotacaoSessao>()))
+            .Callback<AnotacaoSessao>(a => gravada = a).ReturnsAsync(40);
+        var antes = DateTime.Now;
+
+        var anotacao = await CriarService().InserirAnotacaoAsync(1, 2, "  Lia pagou 30 po  ");
+
+        Assert.Equal("Lia pagou 30 po", gravada!.Texto);
+        Assert.Equal(2, gravada.IdSessao);
+        Assert.InRange(gravada.Data, antes.AddSeconds(-1), DateTime.Now.AddSeconds(1));
+        Assert.Equal(40, anotacao.Id);
+    }
+
+    [Fact]
+    public async Task InserirAnotacaoAsync_SessaoAlheia_Codigo10()
+    {
+        Assert.Equal(BusinessErrors.SessaoNaoEncontrada.Code,
+            await CodigoAsync(() => CriarService().InserirAnotacaoAsync(1, 9, "x")));
+        _anotacoes.Verify(a => a.InserirAsync(It.IsAny<AnotacaoSessao>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ExcluirAnotacaoAsync_DeSessaoAlheiaOuInexistente_Codigo12()
+    {
+        _anotacoes.Setup(a => a.ObterAsync(41)).ReturnsAsync(new AnotacaoSessao { Id = 41, IdSessao = 9, Texto = "x" });
+        _anotacoes.Setup(a => a.ObterAsync(42)).ReturnsAsync((AnotacaoSessao?)null);
+
+        Assert.Equal(BusinessErrors.AnotacaoNaoEncontrada.Code, await CodigoAsync(() => CriarService().ExcluirAnotacaoAsync(1, 41)));
+        Assert.Equal(BusinessErrors.AnotacaoNaoEncontrada.Code, await CodigoAsync(() => CriarService().ExcluirAnotacaoAsync(1, 42)));
+        _anotacoes.Verify(a => a.ExcluirAsync(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ListarAnotacoesAsync_DevolveNaOrdemDoRepositorio()
+    {
+        _anotacoes.Setup(a => a.ListarPorSessaoAsync(2)).ReturnsAsync(
+        [
+            new AnotacaoSessao { Id = 1, IdSessao = 2, Data = new DateTime(2026, 11, 18, 20, 14, 0), Texto = "primeira" },
+            new AnotacaoSessao { Id = 2, IdSessao = 2, Data = new DateTime(2026, 11, 18, 20, 31, 0), Texto = "segunda" },
+        ]);
+
+        var lista = (await CriarService().ListarAnotacoesAsync(1, 2)).ToList();
+
+        Assert.Equal(["primeira", "segunda"], lista.Select(a => a.Texto));
     }
 }

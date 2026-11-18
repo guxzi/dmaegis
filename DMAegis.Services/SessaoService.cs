@@ -37,6 +37,13 @@ public class SessaoServiceModel
     public List<SegredoServiceModel> Segredos { get; set; } = [];
 }
 
+public class AnotacaoServiceModel
+{
+    public int Id { get; set; }
+    public DateTime Data { get; set; }
+    public string Texto { get; set; } = string.Empty;
+}
+
 public class InserirSessaoServiceModel
 {
     /// <summary>Nulo = o maior número da campanha + 1.</summary>
@@ -68,6 +75,13 @@ public interface ISessaoService
     Task<SegredoServiceModel> RevelarSegredoAsync(int idUsuario, int idSegredo, int idSessao);
     Task<SegredoServiceModel> OcultarSegredoAsync(int idUsuario, int idSegredo);
     Task ExcluirSegredoAsync(int idUsuario, int idSegredo);
+
+    Task<IEnumerable<AnotacaoServiceModel>> ListarAnotacoesAsync(int idUsuario, int idSessao);
+
+    /// <summary>Grava a anotação com o horário do servidor.</summary>
+    Task<AnotacaoServiceModel> InserirAnotacaoAsync(int idUsuario, int idSessao, string texto);
+
+    Task ExcluirAnotacaoAsync(int idUsuario, int idAnotacao);
 }
 
 public class SessaoService : ISessaoService
@@ -78,6 +92,7 @@ public class SessaoService : ISessaoService
     private readonly ISegredoRepository _segredoRepository;
     private readonly IRegistroRepository _registroRepository;
     private readonly ICampanhaService _campanhaService;
+    private readonly IAnotacaoSessaoRepository _anotacaoRepository;
 
     public SessaoService(
         ISessaoRepository sessaoRepository,
@@ -85,7 +100,8 @@ public class SessaoService : ISessaoService
         ISessaoRegistroRepository vinculoRepository,
         ISegredoRepository segredoRepository,
         IRegistroRepository registroRepository,
-        ICampanhaService campanhaService)
+        ICampanhaService campanhaService,
+        IAnotacaoSessaoRepository anotacaoRepository)
     {
         _sessaoRepository = sessaoRepository;
         _cenaRepository = cenaRepository;
@@ -93,7 +109,44 @@ public class SessaoService : ISessaoService
         _segredoRepository = segredoRepository;
         _registroRepository = registroRepository;
         _campanhaService = campanhaService;
+        _anotacaoRepository = anotacaoRepository;
     }
+
+    public async Task<IEnumerable<AnotacaoServiceModel>> ListarAnotacoesAsync(int idUsuario, int idSessao)
+    {
+        await ObterSessaoDoUsuarioOuLancarAsync(idUsuario, idSessao);
+        return (await _anotacaoRepository.ListarPorSessaoAsync(idSessao)).Select(ParaServiceModel).ToList();
+    }
+
+    public async Task<AnotacaoServiceModel> InserirAnotacaoAsync(int idUsuario, int idSessao, string texto)
+    {
+        await ObterSessaoDoUsuarioOuLancarAsync(idUsuario, idSessao);
+        var anotacao = new AnotacaoSessao { IdSessao = idSessao, Data = DateTime.Now, Texto = texto.Trim() };
+        anotacao.Id = await _anotacaoRepository.InserirAsync(anotacao);
+        return ParaServiceModel(anotacao);
+    }
+
+    public async Task ExcluirAnotacaoAsync(int idUsuario, int idAnotacao)
+    {
+        var anotacao = await _anotacaoRepository.ObterAsync(idAnotacao)
+                       ?? throw new BusinessRuleException(BusinessErrors.AnotacaoNaoEncontrada);
+        try
+        {
+            await ObterSessaoDoUsuarioOuLancarAsync(idUsuario, anotacao.IdSessao);
+        }
+        catch (BusinessRuleException e) when (e.Code == BusinessErrors.SessaoNaoEncontrada.Code)
+        {
+            throw new BusinessRuleException(BusinessErrors.AnotacaoNaoEncontrada);
+        }
+        await _anotacaoRepository.ExcluirAsync(idAnotacao);
+    }
+
+    private static AnotacaoServiceModel ParaServiceModel(AnotacaoSessao anotacao) => new()
+    {
+        Id = anotacao.Id,
+        Data = anotacao.Data,
+        Texto = anotacao.Texto,
+    };
 
     public async Task<IEnumerable<SessaoResumoServiceModel>> ListarAsync(int idUsuario, int idCampanha)
     {

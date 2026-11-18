@@ -204,4 +204,35 @@ public class RegistroServiceTests
         await CriarService().ListarAsync(1, 10, new FiltroRegistro { Texto = "   " });
         Assert.Null(recebido.Texto);
     }
+
+    [Fact]
+    public async Task BuscarAsync_TermoVazio_NaoConsultaEDevolveVazio()
+    {
+        var lista = await CriarService().BuscarAsync(1, 10, "   ");
+
+        Assert.Empty(lista);
+        _registros.Verify(r => r.BuscarAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task BuscarAsync_AparaTermoELimita10ETrazTags()
+    {
+        _registros.Setup(r => r.BuscarAsync(10, "ulm", 10))
+            .ReturnsAsync([new Registro { Id = 100, IdCampanha = 10, IdTipoRegistro = 1, Nome = "Ulm" }]);
+        _registroTags.Setup(r => r.ListarPorRegistrosAsync(It.IsAny<IEnumerable<int>>()))
+            .ReturnsAsync([(100, new Tag { Id = 5, IdCampanha = 10, Nome = "vila" })]);
+
+        var lista = (await CriarService().BuscarAsync(1, 10, "  ulm ")).ToList();
+
+        Assert.Equal("Ulm", Assert.Single(lista).Nome);
+        Assert.Equal("vila", Assert.Single(lista[0].Tags).Nome);
+        _registros.Verify(r => r.BuscarAsync(10, "ulm", 10), Times.Once);
+    }
+
+    [Fact]
+    public async Task BuscarAsync_CampanhaAlheia_Codigo5()
+    {
+        var erro = await Assert.ThrowsAsync<BusinessRuleException>(() => CriarService().BuscarAsync(1, 20, "ulm"));
+        Assert.Equal(BusinessErrors.CampanhaNaoEncontrada.Code, erro.Code);
+    }
 }

@@ -38,6 +38,15 @@ public class RegistroController : ControllerBase
             registros.Select(r => r.ParaResponse()).ToList()));
     }
 
+    /// <summary>Busca rápida do escudo (Ctrl+K): nome, resumo e tags; até 10 resultados.</summary>
+    [HttpGet("api/campanhas/{idCampanha:int}/busca")]
+    public async Task<ActionResult<ApiResponse<List<RegistroResumoResponseApiModel>>>> Buscar(
+        int idCampanha, [FromQuery] string? q)
+    {
+        var registros = await _registroService.BuscarAsync(User.ObterIdUsuario(), idCampanha, q);
+        return Ok(ApiResponse<List<RegistroResumoResponseApiModel>>.Sucesso(registros.Select(r => r.ParaResponse()).ToList()));
+    }
+
     [HttpPost("api/campanhas/{idCampanha:int}/registros")]
     public async Task<ActionResult<ApiResponse<RegistroResponseApiModel>>> Inserir(
         int idCampanha, [FromBody] SalvarRegistroRequestApiModel request)

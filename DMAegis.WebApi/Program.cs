@@ -1,12 +1,20 @@
+using DMAegis.Services.Exceptions;
+using DMAegis.WebApi.ApiModels;
 using DMAegis.WebApi.Configuration;
 using DMAegis.WebApi.Middlewares;
+using Microsoft.AspNetCore.Mvc;
 
 // Carrega o .env da raiz do repositório (procura nas pastas acima do projeto).
 DotNetEnv.Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(opcoes =>
+{
+    // JSON malformado ou com tipo errado: responde no envelope (código 2), como qualquer erro de dados.
+    opcoes.InvalidModelStateResponseFactory = _ => new BadRequestObjectResult(
+        ApiResponse<object>.Erro(BusinessErrors.DadosInvalidos.Code, BusinessErrors.DadosInvalidos.DefaultMessage));
+});
 builder.Services.AddOpenApi();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();

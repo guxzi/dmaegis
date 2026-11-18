@@ -121,6 +121,70 @@ public class SessaoControllerTests
     }
 
     [Fact]
+    public async Task Anotacao_Inserir_201ComHora()
+    {
+        _api.Sessoes.Setup(s => s.InserirAnotacaoAsync(7, 1, "Lia pagou 30 po"))
+            .ReturnsAsync(new AnotacaoServiceModel { Id = 3, Data = new DateTime(2026, 11, 18, 20, 14, 0), Texto = "Lia pagou 30 po" });
+        var cliente = await _api.CriarClienteLogadoAsync();
+
+        var resposta = await cliente.PostAsJsonAsync("/api/sessoes/1/anotacoes", new { texto = "Lia pagou 30 po" });
+
+        Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
+        var data = (await LerEnvelopeAsync(resposta)).GetProperty("data");
+        Assert.Equal("2026-11-18T20:14:00", data.GetProperty("data").GetString());
+    }
+
+    [Fact]
+    public async Task Anotacao_TextoVazio_400Codigo2()
+    {
+        var cliente = await _api.CriarClienteLogadoAsync();
+
+        var resposta = await cliente.PostAsJsonAsync("/api/sessoes/1/anotacoes", new { texto = "  " });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
+        Assert.Equal(2, (await LerEnvelopeAsync(resposta)).GetProperty("responseCode").GetInt32());
+    }
+
+    [Fact]
+    public async Task JsonInvalido_Responde400ComEnvelopeCodigo2()
+    {
+        var cliente = await _api.CriarClienteLogadoAsync();
+        var corpo = new StringContent("{\"texto\": ", System.Text.Encoding.UTF8, "application/json");
+
+        var resposta = await cliente.PostAsync("/api/sessoes/1/anotacoes", corpo);
+
+        Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
+        var envelope = await LerEnvelopeAsync(resposta);
+        Assert.Equal(2, envelope.GetProperty("responseCode").GetInt32());
+        Assert.Equal("Dados inválidos.", envelope.GetProperty("errorMessage").GetString());
+    }
+
+    [Fact]
+    public async Task Anotacao_Listar_RepassaSessao()
+    {
+        _api.Sessoes.Setup(s => s.ListarAnotacoesAsync(7, 1))
+            .ReturnsAsync([new AnotacaoServiceModel { Id = 3, Data = DateTime.Now, Texto = "a" }]);
+        var cliente = await _api.CriarClienteLogadoAsync();
+
+        var resposta = await cliente.GetAsync("/api/sessoes/1/anotacoes");
+
+        Assert.Equal("a", (await LerEnvelopeAsync(resposta)).GetProperty("data")[0].GetProperty("texto").GetString());
+    }
+
+    [Fact]
+    public async Task Anotacao_NaoEncontrada_404Codigo12()
+    {
+        _api.Sessoes.Setup(s => s.ExcluirAnotacaoAsync(7, 99))
+            .ThrowsAsync(new BusinessRuleException(BusinessErrors.AnotacaoNaoEncontrada));
+        var cliente = await _api.CriarClienteLogadoAsync();
+
+        var resposta = await cliente.DeleteAsync("/api/anotacoes/99");
+
+        Assert.Equal(HttpStatusCode.NotFound, resposta.StatusCode);
+        Assert.Equal(12, (await LerEnvelopeAsync(resposta)).GetProperty("responseCode").GetInt32());
+    }
+
+    [Fact]
     public async Task Excluir_Responde200()
     {
         var cliente = await _api.CriarClienteLogadoAsync();

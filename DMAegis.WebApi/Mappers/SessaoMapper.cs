@@ -57,3 +57,13 @@ public static class SessaoMapper
         DataRevelacao = segredo.DataRevelacao,
     };
 }
+
+public static class AnotacaoMapper
+{
+    public static AnotacaoResponseApiModel ParaResponse(this AnotacaoServiceModel anotacao) => new()
+    {
+        Id = anotacao.Id,
+        Data = anotacao.Data,
+        Texto = anotacao.Texto,
+    };
+}

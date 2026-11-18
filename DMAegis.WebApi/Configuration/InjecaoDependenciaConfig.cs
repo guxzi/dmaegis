@@ -29,6 +29,7 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<ICenaSessaoRepository, CenaSessaoRepository>();
         services.AddScoped<ISessaoRegistroRepository, SessaoRegistroRepository>();
         services.AddScoped<ISegredoRepository, SegredoRepository>();
+        services.AddScoped<IAnotacaoSessaoRepository, AnotacaoSessaoRepository>();
 
         // Services
         services.AddScoped<ISaudeService, SaudeService>();

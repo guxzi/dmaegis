@@ -69,6 +69,10 @@ public interface IRegistroService
     Task<IEnumerable<ModeloAtributoServiceModel>> ListarModelosAsync(int idSistema, int? idTipoRegistro);
     Task<IEnumerable<TagServiceModel>> ListarTagsAsync(int idUsuario, int idCampanha);
     Task<IEnumerable<RegistroResumoServiceModel>> ListarAsync(int idUsuario, int idCampanha, FiltroRegistro filtro);
+
+    /// <summary>Busca rápida (Ctrl+K): até 10 registros. Termo vazio → lista vazia.</summary>
+    Task<IEnumerable<RegistroResumoServiceModel>> BuscarAsync(int idUsuario, int idCampanha, string? termo);
+
     Task<RegistroServiceModel> ObterAsync(int idUsuario, int id);
     Task<RegistroServiceModel> InserirAsync(int idUsuario, int idCampanha, SalvarRegistroServiceModel dados);
     Task<RegistroServiceModel> AtualizarAsync(int idUsuario, int id, SalvarRegistroServiceModel dados);
@@ -157,7 +161,25 @@ public class RegistroService : IRegistroService
             Texto = string.IsNullOrEmpty(texto) ? null : texto,
         };
 
-        var registros = (await _registroRepository.ListarAsync(idCampanha, filtroLimpo)).ToList();
+        return await ResumirComTagsAsync(await _registroRepository.ListarAsync(idCampanha, filtroLimpo));
+    }
+
+    public const int LimiteBusca = 10;
+
+    public async Task<IEnumerable<RegistroResumoServiceModel>> BuscarAsync(int idUsuario, int idCampanha, string? termo)
+    {
+        await _campanhaService.ObterDoUsuarioOuLancarAsync(idUsuario, idCampanha);
+
+        var termoLimpo = termo?.Trim();
+        if (string.IsNullOrEmpty(termoLimpo))
+            return [];
+
+        return await ResumirComTagsAsync(await _registroRepository.BuscarAsync(idCampanha, termoLimpo, LimiteBusca));
+    }
+
+    private async Task<List<RegistroResumoServiceModel>> ResumirComTagsAsync(IEnumerable<Registro> encontrados)
+    {
+        var registros = encontrados.ToList();
         var tagsPorRegistro = (await _registroTagRepository.ListarPorRegistrosAsync(registros.Select(r => r.Id)))
             .ToLookup(x => x.IdRegistro, x => ParaServiceModel(x.Tag));
 

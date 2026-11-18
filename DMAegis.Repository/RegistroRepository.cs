@@ -16,6 +16,13 @@ public class FiltroRegistro
 public interface IRegistroRepository
 {
     Task<IEnumerable<Registro>> ListarAsync(int idCampanha, FiltroRegistro filtro);
+
+    /// <summary>
+    /// Busca rápida (Ctrl+K): termo no nome, no resumo ou no nome de uma tag do registro.
+    /// Nomes que começam com o termo vêm primeiro. Busca literal (% e _ escapados).
+    /// </summary>
+    Task<IEnumerable<Registro>> BuscarAsync(int idCampanha, string termo, int limite);
+
     Task<Registro?> ObterAsync(int id);
     Task<int> InserirAsync(Registro registro);
     Task AtualizarAsync(Registro registro);
@@ -59,6 +66,27 @@ public class RegistroRepository : RepositoryBase, IRegistroRepository
                    OR r.ds_resumo LIKE @padrao ESCAPE '\\')
             ORDER BY r.no_registro
             """, new { idCampanha, idTipo = filtro.IdTipoRegistro, idTag = filtro.IdTag, padrao });
+    }
+
+    public async Task<IEnumerable<Registro>> BuscarAsync(int idCampanha, string termo, int limite)
+    {
+        var escapado = EscaparLike(termo);
+        var padrao = $"%{escapado}%";
+        var inicio = $"{escapado}%";
+
+        await using var conexao = ConexaoFactory.Criar();
+        return await conexao.QueryAsync<Registro>($"""
+            SELECT {Colunas} FROM tb_registro r
+            WHERE r.co_campanha = @idCampanha
+              AND (r.no_registro LIKE @padrao ESCAPE '\\'
+                   OR r.ds_resumo LIKE @padrao ESCAPE '\\'
+                   OR EXISTS (
+                        SELECT 1 FROM tb_registro_tag rt
+                        JOIN tb_tag t ON t.co_seq_tag = rt.co_tag
+                        WHERE rt.co_registro = r.co_seq_registro AND t.no_tag LIKE @padrao ESCAPE '\\'))
+            ORDER BY (r.no_registro LIKE @inicio ESCAPE '\\') DESC, r.no_registro
+            LIMIT @limite
+            """, new { idCampanha, padrao, inicio, limite });
     }
 
     public async Task<Registro?> ObterAsync(int id)

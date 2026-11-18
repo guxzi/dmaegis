@@ -65,3 +65,16 @@ public class SalvarSegredoValidator : AbstractValidator<SalvarSegredoRequestApiM
             .WithMessage($"O segredo pode ter até {RegrasSessao.TamanhoMaximoSegredo} caracteres.");
     }
 }
+
+public class SalvarAnotacaoValidator : AbstractValidator<SalvarAnotacaoRequestApiModel>
+{
+    public const int TamanhoMaximo = 2000;
+
+    public SalvarAnotacaoValidator()
+    {
+        RuleFor(x => x.Texto)
+            .Must(t => !string.IsNullOrWhiteSpace(t)).WithMessage("Escreva a anotação.")
+            .Must(t => (t ?? string.Empty).Trim().Length <= TamanhoMaximo)
+            .WithMessage($"A anotação pode ter até {TamanhoMaximo} caracteres.");
+    }
+}
