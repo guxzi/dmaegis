@@ -25,6 +25,7 @@ export default function Cabecalho({ idCampanha, aoEscolherRegistro, className = 
             <NavLink to={base} end>Visão geral</NavLink>
             <NavLink to={`${base}/escudo`}>Escudo</NavLink>
             <NavLink to={`${base}/caderno`}>Caderno</NavLink>
+            <NavLink to={`${base}/galeria`}>Galeria</NavLink>
             <NavLink to={`${base}/sessoes`}>Sessões</NavLink>
           </div>
         )}

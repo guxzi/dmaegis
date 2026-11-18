@@ -3,6 +3,7 @@ import { mensagemDeErro } from '../api/erros.js';
 import { enviarImagem, excluirImagem, listarImagens, urlDaImagem } from '../api/imagens.js';
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx';
 import { formatarTamanho, tituloDoArquivo, validarArquivo } from './arquivos.js';
+import AcoesImagem from './AcoesImagem.jsx';
 import VisualizadorImagem from './VisualizadorImagem.jsx';
 
 // Mapas e imagens de um registro. Com `editavel`, permite enviar (vários de uma vez) e excluir.
@@ -113,6 +114,7 @@ export default function GaleriaImagens({ idRegistro, editavel = false, colunas =
                 </>
               )}
             </figcaption>
+            <AcoesImagem imagem={imagem} compacto />
           </figure>
         ))}
       </div>

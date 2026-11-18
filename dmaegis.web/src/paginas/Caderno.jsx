@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { listarRegistros, listarTags } from '../api/caderno.js';
 import { mensagemDeErro } from '../api/erros.js';
+import { listarImagensDaCampanha, urlDaImagem } from '../api/imagens.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import { COR_TIPO } from '../caderno/tipos.js';
 import { useCaderno } from '../caderno/useCaderno.js';
 import Cabecalho from '../componentes/Cabecalho.jsx';
+import { retratosPorRegistro } from '../imagens/retratos.js';
 import CabecalhoSecao from '../visual/CabecalhoSecao.jsx';
 
 export default function Caderno() {
@@ -18,6 +20,7 @@ export default function Caderno() {
   const [idTag, setIdTag] = useState('');
   const [texto, setTexto] = useState('');
   const [textoBusca, setTextoBusca] = useState('');
+  const [retratos, setRetratos] = useState({});
 
   // Espera 300 ms sem digitar antes de buscar.
   useEffect(() => {
@@ -27,6 +30,7 @@ export default function Caderno() {
 
   useEffect(() => {
     listarTags(id).then(setTags).catch(() => {});
+    listarImagensDaCampanha(id).then((lista) => setRetratos(retratosPorRegistro(lista))).catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -92,8 +96,13 @@ export default function Caderno() {
               <div className="col" key={r.id}>
                 <Link to={`/campanhas/${id}/caderno/${r.id}`} className="cartao-registro"
                   style={{ '--cor-tipo': COR_TIPO[r.idTipoRegistro] ?? '#9aa3d4' }}>
-                  <span className="tipo">{rotulo(r.idTipoRegistro)}</span>
-                  <h3>{r.nome}</h3>
+                  <div className="d-flex align-items-center gap-3">
+                    {retratos[r.id] && <img className="retrato" src={urlDaImagem(retratos[r.id])} alt="" loading="lazy" />}
+                    <div style={{ minWidth: 0 }}>
+                      <span className="tipo">{rotulo(r.idTipoRegistro)}</span>
+                      <h3>{r.nome}</h3>
+                    </div>
+                  </div>
                   {r.resumo && <p className="resumo">{r.resumo}</p>}
                   {r.tags.length > 0 && (
                     <div className="d-flex flex-wrap gap-1 mt-auto pt-1">

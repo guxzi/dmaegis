@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { urlDaImagem } from '../api/imagens.js';
+import AcoesImagem from './AcoesImagem.jsx';
 
 // Visualizador em tela cheia. A imagem começa ajustada à tela; clicar alterna para o tamanho real (com rolagem).
 // ← → trocam de imagem, Esc fecha. Fica acima do cartão lateral do escudo.
@@ -42,8 +43,12 @@ export default function VisualizadorImagem({ imagens, indice, aoMudar, aoFechar 
           <button type="button" className="btn btn-sm btn-outline-secondary" aria-label="Imagem anterior"
             onClick={() => { setTamanhoReal(false); aoMudar((indice - 1 + imagens.length) % imagens.length); }}>←</button>
         )}
-        <span className="titulo-runico flex-grow-1 text-center text-truncate">{imagem.titulo}</span>
-        <span className="small text-secondary">{indice + 1} de {imagens.length}</span>
+        <span className="titulo-runico flex-grow-1 text-truncate">
+          {imagem.titulo}
+          {imagem.nomeRegistro && <span className="small text-secondary ms-2">{imagem.nomeRegistro}</span>}
+        </span>
+        <AcoesImagem key={imagem.id} imagem={imagem} comOpcaoTitulo />
+        <span className="small text-secondary text-nowrap">{indice + 1} de {imagens.length}</span>
         {imagens.length > 1 && (
           <button type="button" className="btn btn-sm btn-outline-secondary" aria-label="Próxima imagem"
             onClick={() => { setTamanhoReal(false); aoMudar((indice + 1) % imagens.length); }}>→</button>

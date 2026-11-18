@@ -12,3 +12,4 @@ export function enviarImagem(idRegistro, arquivo, titulo) {
   if (titulo) formulario.append('titulo', titulo);
   return api.post(`/registros/${idRegistro}/imagens`, formulario).then(dados);
 }
+export const listarImagensDaCampanha = (idCampanha) => api.get(`/campanhas/${idCampanha}/imagens`).then(dados);
