@@ -39,15 +39,24 @@
   letter-spacing: 0.04em;
 }
 
+/* A página ocupa a altura da janela abaixo do cabeçalho (58px + 8px); a barra pode quebrar em duas linhas
+   e o palco fica com o resto, sem a página rolar. */
+.pagina-mesa {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 66px);
+  padding-bottom: 0.75rem;
+}
 .mesa-area {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 370px;
   gap: 1rem;
-  height: calc(100vh - 138px);
-  min-height: 520px;
+  flex: 1;
+  min-height: 480px;
 }
 .mesa-palco-coluna { min-width: 0; min-height: 0; height: 100%; }
 @media (max-width: 991.98px) {
+  .pagina-mesa { height: auto; }
   .mesa-area { grid-template-columns: 1fr; height: auto; }
   .mesa-palco-coluna { height: 62vh; }
 }
@@ -777,3 +786,61 @@
 }
 .lista-convites-nome { display: flex; flex-direction: column; min-width: 150px; flex: 1; }
 .lista-convites-link { flex: 2 1 260px; font-family: ui-monospace, Consolas, monospace; font-size: 0.78rem; }
+
+/* ---------- Névoa de guerra ---------- */
+.palco-nevoa {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+/* Jogadores: espaço profundo quase opaco, com um leve brilho violeta (as estrelas vêm de um padrão no SVG). */
+.nevoa-jogador .nevoa-veu { fill: rgba(4, 6, 18, 0.97); }
+/* Mestre: véu violeta translúcido, para enxergar o mapa e saber o que ainda está coberto. */
+.nevoa-mestre .nevoa-veu { fill: rgba(var(--dm-violeta-rgb), 0.28); }
+
+.palco-pintando { cursor: crosshair; }
+.palco-pintando:active { cursor: crosshair; }
+.palco-pintando .ficha { pointer-events: none; }
+.pincel-cursor,
+.pincel-area {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 6px;
+}
+.pincel-cursor { border: 2px solid var(--cor-pincel); box-shadow: 0 0 14px var(--cor-pincel), inset 0 0 14px color-mix(in srgb, var(--cor-pincel) 40%, transparent); }
+.pincel-area { border: 2px dashed var(--cor-pincel); background: color-mix(in srgb, var(--cor-pincel) 18%, transparent); }
+.pincel-revelar { --cor-pincel: var(--dm-estrela); }
+.pincel-esconder { --cor-pincel: var(--saude-sangrando); }
+
+.ajuste-nevoa { width: 290px; left: auto; right: 12px; }
+.tamanhos-pincel { display: flex; gap: 0.3rem; }
+.tamanhos-pincel button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid var(--dm-borda);
+  background: transparent;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.25s;
+}
+.tamanhos-pincel button span {
+  width: var(--lado);
+  height: var(--lado);
+  border-radius: 4px;
+  background: var(--dm-estrela);
+  opacity: 0.6;
+}
+.tamanhos-pincel button:hover { border-color: var(--dm-borda-forte); }
+.tamanhos-pincel button[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--dm-gradiente);
+  box-shadow: 0 4px 14px -4px rgba(var(--dm-violeta-rgb), 0.8);
+}
+.tamanhos-pincel button[aria-pressed="true"] span { background: #fff; opacity: 1; }
+.btn.com-nevoa { border-color: rgba(var(--dm-violeta-rgb), 0.7); box-shadow: 0 0 12px -2px rgba(var(--dm-violeta-rgb), 0.7); }

@@ -27,6 +27,7 @@ Durante a sessão, o mestre vive procurando coisas: o nome daquele NPC, a regra 
   - aba de regras e dicas de condução, só do sistema da mesa.
 - **Galeria:** todas as imagens da campanha ligadas ao nome do NPC ou do local. Enviar imagem com um nome novo já cria o registro.
 - **Mesa virtual:** mapa da galeria com grade ajustável, fichas redondas com retrato (ou a inicial, enquanto o personagem não tem imagem), pan e zoom. O combate fica ao lado: iniciativa (monstros rolam d20 + bônus), turno e rodada (atalho N), dano e cura, condições do sistema da mesa e fichas ocultas.
+- **Névoa de guerra:** com um pincel (ou Shift + arrastar para um retângulo), o mestre revela o mapa aos poucos. Os jogadores veem a névoa escura com bordas suaves, e monstros na névoa não chegam até eles.
 - **Jogadores pelo navegador:** cada PJ recebe um link. O jogador abre, vê a mesa em tempo real e move a própria ficha. Ele vê só o que deve: nada de PV de monstros, fichas ocultas, anotações ou segredos.
 - **Projeção para os jogadores:** uma janela limpa para compartilhar a tela ou levar ao segundo monitor. Qualquer imagem vai para lá com um clique, com ou sem o título. Também dá para copiar ou baixar a imagem.
 - **Visual:** espaço profundo, cobalto e violeta, estrelas que viajam a cada página e uma faísca de luz no clique. As animações desligam quando o sistema pede menos movimento.

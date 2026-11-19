@@ -4,8 +4,8 @@ import { listarRegistros } from '../api/caderno.js';
 import { mensagemDeErro } from '../api/erros.js';
 import { listarImagensDaCampanha, urlDaImagem } from '../api/imagens.js';
 import {
-  adicionarFichas, ativarMesa, criarMesa, encerrarCombate, excluirFicha, excluirMesa, iniciarCombate, listarMesas,
-  moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
+  adicionarFichas, alterarNevoa, ativarMesa, criarMesa, encerrarCombate, esconderTudo, excluirFicha, excluirMesa,
+  iniciarCombate, listarMesas, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
 } from '../api/mesas.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
@@ -13,6 +13,8 @@ import { useCaderno } from '../caderno/useCaderno.js';
 import Cabecalho from '../componentes/Cabecalho.jsx';
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx';
 import AdicionarFichas from '../mesa/AdicionarFichas.jsx';
+import AjusteNevoa from '../mesa/AjusteNevoa.jsx';
+import { celulaDaChave, emLotes, todasAsCelulas } from '../mesa/nevoa.js';
 import { corpoDaFicha, iniciativasParaComecar } from '../mesa/combate.js';
 import { condicoesDoSistema } from '../mesa/condicoes.js';
 import EscolherMapa from '../mesa/EscolherMapa.jsx';
@@ -37,6 +39,7 @@ function corpoDaMesa(mesa, mudancas = {}) {
     deslocamentoY: m.deslocamentoY,
     gradeVisivel: m.gradeVisivel,
     movimentoLivre: m.movimentoLivre ?? true,
+    nevoa: m.nevoa ?? false,
   };
 }
 
@@ -86,6 +89,9 @@ export default function Mesa() {
   const [excluindo, setExcluindo] = useState(null);
   const [renomeando, setRenomeando] = useState(false);
   const [vendoJogadores, setVendoJogadores] = useState(false);
+  // Com o painel da névoa aberto, o palco pinta em vez de mover a vista.
+  const [pincel, setPincel] = useState(null);
+  const [limitesGrade, setLimitesGrade] = useState(null);
 
   const idMesa = Number(parametros.get('mesa')) || mesas?.[0]?.id || null;
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
@@ -184,6 +190,20 @@ export default function Mesa() {
     moverNoMapa(ficha, coluna, linha);
   }
 
+  // O pincel soltou: mostra já o resultado e manda só a diferença para o servidor.
+  const pintarNevoa = useCallback((mudancas, final) => {
+    setMesa((m) => m && ({ ...m, celulasReveladas: [...final].map(celulaDaChave) }));
+    executar(() => alterarNevoa(idMesa, mudancas.revelar, mudancas.esconder));
+  }, [executar, idMesa]);
+
+  async function revelarTudo() {
+    if (!limitesGrade) return;
+    for (const lote of emLotes(todasAsCelulas(limitesGrade))) {
+      const ok = await executar(() => alterarNevoa(mesa.id, lote, []));
+      if (!ok) return;
+    }
+  }
+
   function salvarGrade(mudancas = {}) {
     if (!mesa) return;
     executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, mudancas)));
@@ -276,7 +296,10 @@ export default function Mesa() {
                 {imagemAtual ? `Mapa: ${imagemAtual.titulo}` : 'Escolher mapa'}
               </button>
               <button type="button" className="btn btn-sm btn-fantasma" aria-pressed={ajustandoGrade}
-                onClick={() => setAjustandoGrade((v) => !v)}>Grade</button>
+                onClick={() => { setAjustandoGrade((v) => !v); setPincel(null); }}>Grade</button>
+              <button type="button" className={`btn btn-sm btn-fantasma${mesa.nevoa ? ' com-nevoa' : ''}`} aria-pressed={Boolean(pincel)}
+                onClick={() => { setPincel((p) => (p ? null : { modo: 'revelar', tamanho: 3 })); setAjustandoGrade(false); }}
+                title="Névoa de guerra: revele o mapa aos poucos">Névoa</button>
               {mesa.ativa
                 ? <span className="selo-ativa" title="É a mesa que os jogadores veem">◉ Ativa</span>
                 : <button type="button" className="btn btn-sm btn-fantasma" onClick={() => executar(() => ativarMesa(mesa.id))}>Tornar ativa</button>}
@@ -312,10 +335,17 @@ export default function Mesa() {
           <div className="mesa-area">
             <div className="mesa-palco-coluna">
               <PalcoMapa mesa={mesa} urlImagem={urlDaImagem} modo="mestre" podeArrastar={() => true}
-                aoMover={moverNoMapa} idSelecionada={idSelecionada} aoSelecionar={setIdSelecionada}>
+                aoMover={moverNoMapa} idSelecionada={idSelecionada} aoSelecionar={setIdSelecionada}
+                pincel={pincel} aoPintarNevoa={pintarNevoa} aoMedirGrade={setLimitesGrade}>
                 {ajustandoGrade && (
                   <AjusteGrade mesa={mesa} aoMudar={(m) => setMesa((atual) => ({ ...atual, ...m }))}
                     aoSalvar={salvarGrade} aoFechar={() => setAjustandoGrade(false)} />
+                )}
+                {pincel && (
+                  <AjusteNevoa mesa={mesa} pincel={pincel} aoMudarPincel={setPincel} ocupado={ocupado}
+                    aoLigar={(ligada) => executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, { nevoa: ligada })))}
+                    aoRevelarTudo={revelarTudo} aoEsconderTudo={() => executar(() => esconderTudo(mesa.id))}
+                    aoFechar={() => setPincel(null)} />
                 )}
                 {mesa.emCombate && daVez && (
                   <div className="faixa-vez" key={daVez.id}>

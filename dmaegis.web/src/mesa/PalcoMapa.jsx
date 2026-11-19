@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { COR_TIPO } from '../caderno/tipos.js';
 import { CLASSE_SAUDE, estadoSaude, fracaoPv } from './combate.js';
+import CamadaNevoa from './CamadaNevoa.jsx';
 import { celulaDoPonto, enquadrar, pontoDaCelula, zoomNoPonto } from './grade.js';
+import {
+  caminhoEntre, celulasDoPincel, celulasDoRetangulo, conjuntoDe, diferenca, limitesDaGrade, pintar,
+} from './nevoa.js';
 
 // Sem mapa, a mesa é um campo estrelado com esta grade (em células).
 const COLUNAS_SEM_MAPA = 30;
@@ -55,9 +59,11 @@ function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando
 
 // O mapa com a grade e as fichas: arrastar o fundo move a vista, a roda dá zoom no cursor,
 // e as fichas permitidas são arrastadas e encaixadas na grade. Serve ao mestre e aos jogadores.
+// Com `pincel` ({ modo: 'revelar' | 'esconder', tamanho }), arrastar pinta a névoa em vez de mover a vista
+// (Shift + arrastar pinta um retângulo) e, ao soltar, `aoPintarNevoa({ revelar, esconder })` recebe a diferença.
 export default function PalcoMapa({
   mesa, urlImagem, modo = 'mestre', podeArrastar = () => false, aoMover, idSelecionada = null,
-  aoSelecionar = () => {}, children,
+  aoSelecionar = () => {}, pincel = null, aoPintarNevoa, aoMedirGrade, children,
 }) {
   const palcoRef = useRef(null);
   const [vista, setVista] = useState({ x: 0, y: 0, escala: 1 });
@@ -65,12 +71,23 @@ export default function PalcoMapa({
   const [arrasto, setArrasto] = useState(null);
   const gesto = useRef(null);
   const enquadrouRef = useRef(null);
+  // Enquanto o mestre pinta, a névoa mostra a prévia (conjunto de células reveladas) até soltar o mouse.
+  const [pintura, setPintura] = useState(null);
+  const [celulaSobCursor, setCelulaSobCursor] = useState(null);
 
   // Só vale o tamanho da imagem que está na mesa agora (ao trocar o mapa, espera a nova carregar).
   const tamanhoImagem = imagemCarregada?.id === mesa.idImagemRegistro ? imagemCarregada : null;
   const largura = tamanhoImagem?.largura ?? COLUNAS_SEM_MAPA * mesa.tamanhoCelula + mesa.deslocamentoX;
   const altura = tamanhoImagem?.altura ?? LINHAS_SEM_MAPA * mesa.tamanhoCelula + mesa.deslocamentoY;
   const temImagem = Boolean(mesa.idImagemRegistro);
+  const limites = useMemo(() => limitesDaGrade(largura, altura, mesa), [largura, altura, mesa]);
+  const reveladasSalvas = useMemo(() => conjuntoDe(mesa.celulasReveladas ?? []), [mesa.celulasReveladas]);
+  const reveladas = pintura?.atual ?? reveladasSalvas;
+
+  // Conta da grade para quem usa a mesa (o "Revelar tudo" do mestre precisa saber o tamanho).
+  useEffect(() => {
+    aoMedirGrade?.({ colunas: limites.colunas, linhas: limites.linhas });
+  }, [aoMedirGrade, limites.colunas, limites.linhas]);
 
   const centralizar = useCallback(() => {
     const palco = palcoRef.current;
@@ -132,8 +149,23 @@ export default function PalcoMapa({
     };
   }
 
+  function celulaDoEvento(evento) {
+    const ponto = pontoNoMapa(evento);
+    return celulaDoPonto(ponto.x, ponto.y, mesa, 1);
+  }
+
   function apertarFundo(evento) {
     if (evento.button !== 0) return;
+    if (pincel) {
+      // Pintar a névoa: guarda o conjunto de antes para mandar só a diferença ao soltar.
+      const celula = celulaDoEvento(evento);
+      const retangulo = evento.shiftKey;
+      const atual = retangulo ? reveladasSalvas : pintar(reveladasSalvas, celulasDoPincel(celula.coluna, celula.linha, pincel.tamanho, limites), pincel.modo);
+      gesto.current = { tipo: 'pintar', inicio: celula, ultima: celula, retangulo, antes: reveladasSalvas };
+      setPintura({ atual, retangulo: retangulo ? { a: celula, b: celula } : null });
+      evento.currentTarget.setPointerCapture(evento.pointerId);
+      return;
+    }
     gesto.current = { tipo: 'mover-vista', inicioX: evento.clientX, inicioY: evento.clientY, vista, moveu: false };
     evento.currentTarget.setPointerCapture(evento.pointerId);
   }
@@ -151,8 +183,24 @@ export default function PalcoMapa({
   }
 
   function mover(evento) {
+    if (pincel) setCelulaSobCursor(celulaDoEvento(evento));
     const g = gesto.current;
     if (!g) return;
+    if (g.tipo === 'pintar') {
+      const celula = celulaDoEvento(evento);
+      if (celula.coluna === g.ultima.coluna && celula.linha === g.ultima.linha) return;
+      if (g.retangulo) {
+        const area = celulasDoRetangulo(g.inicio, celula, limites);
+        setPintura({ atual: pintar(g.antes, area, pincel.modo), retangulo: { a: g.inicio, b: celula } });
+      } else {
+        // Pinta o caminho todo desde a última célula, para um arrasto rápido não deixar buracos.
+        const pintadas = caminhoEntre(g.ultima, celula)
+          .flatMap((c) => celulasDoPincel(c.coluna, c.linha, pincel.tamanho, limites));
+        setPintura((p) => ({ atual: pintar(p?.atual ?? g.antes, pintadas, pincel.modo), retangulo: null }));
+      }
+      g.ultima = celula;
+      return;
+    }
     const distancia = Math.hypot(evento.clientX - g.inicioX, evento.clientY - g.inicioY);
     if (distancia > LIMIAR_ARRASTO) g.moveu = true;
     if (g.tipo === 'mover-vista') {
@@ -167,6 +215,13 @@ export default function PalcoMapa({
     const g = gesto.current;
     gesto.current = null;
     if (!g) return;
+    if (g.tipo === 'pintar') {
+      const final = pintura?.atual ?? g.antes;
+      const mudancas = diferenca(g.antes, final);
+      if (mudancas.revelar.length || mudancas.esconder.length) aoPintarNevoa?.(mudancas, final);
+      setPintura(null);
+      return;
+    }
     if (g.tipo === 'mover-vista') {
       if (!g.moveu) aoSelecionar(null);
       return;
@@ -199,8 +254,9 @@ export default function PalcoMapa({
   })();
 
   return (
-    <div className={`palco-mapa palco-${modo}${arrasto ? ' arrastando' : ''}`} ref={palcoRef}
-      onPointerDown={apertarFundo} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}>
+    <div className={`palco-mapa palco-${modo}${arrasto ? ' arrastando' : ''}${pincel ? ' palco-pintando' : ''}`} ref={palcoRef}
+      onPointerDown={apertarFundo} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
+      onPointerLeave={() => setCelulaSobCursor(null)}>
       <div className="palco-conteudo"
         style={{ width: largura, height: altura, transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.escala})` }}>
         {temImagem
@@ -221,6 +277,35 @@ export default function PalcoMapa({
             <rect width="100%" height="100%" fill={`url(#grade-${modo})`} />
           </svg>
         )}
+
+        {mesa.nevoa && (
+          <CamadaNevoa largura={largura} altura={altura} mesa={mesa} reveladas={reveladas} modo={modo} />
+        )}
+
+        {pincel && pintura?.retangulo && (() => {
+          const a = pintura.retangulo.a;
+          const b = pintura.retangulo.b;
+          const canto = pontoDaCelula(Math.min(a.coluna, b.coluna), Math.min(a.linha, b.linha), mesa);
+          return (
+            <div className={`pincel-area pincel-${pincel.modo}`} style={{
+              transform: `translate(${canto.x}px, ${canto.y}px)`,
+              width: (Math.abs(a.coluna - b.coluna) + 1) * mesa.tamanhoCelula,
+              height: (Math.abs(a.linha - b.linha) + 1) * mesa.tamanhoCelula,
+            }} />
+          );
+        })()}
+
+        {pincel && celulaSobCursor && !pintura?.retangulo && (() => {
+          const raio = Math.floor(pincel.tamanho / 2);
+          const canto = pontoDaCelula(celulaSobCursor.coluna - raio, celulaSobCursor.linha - raio, mesa);
+          return (
+            <div className={`pincel-cursor pincel-${pincel.modo}`} style={{
+              transform: `translate(${canto.x}px, ${canto.y}px)`,
+              width: pincel.tamanho * mesa.tamanhoCelula,
+              height: pincel.tamanho * mesa.tamanhoCelula,
+            }} />
+          );
+        })()}
 
         {destino && (
           <div className="palco-destino" style={{ width: destino.lado, height: destino.lado, transform: `translate(${destino.x}px, ${destino.y}px)` }} />

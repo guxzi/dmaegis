@@ -20,3 +20,7 @@ export const proximoTurno = (idMesa) => api.post(`/mesas/${idMesa}/combate/proxi
 export const encerrarCombate = (idMesa) => api.delete(`/mesas/${idMesa}/combate`).then(dados);
 
 export const obterVisaoJogador = (idMesa) => api.get(`/mesas/${idMesa}/visao-jogador`).then(dados);
+
+// Névoa: o que o pincel pintou de uma vez ({ coluna, linha }[]), e "esconder tudo".
+export const alterarNevoa = (idMesa, revelar, esconder) => api.put(`/mesas/${idMesa}/nevoa`, { revelar, esconder }).then(dados);
+export const esconderTudo = (idMesa) => api.delete(`/mesas/${idMesa}/nevoa`).then(dados);
