@@ -67,7 +67,14 @@ public static class AutenticacaoConfig
 
         services.AddAuthorization();
 
-        services.AddAntiforgery(opcoes => opcoes.HeaderName = CabecalhoCsrf);
+        services.AddAntiforgery(opcoes =>
+        {
+            opcoes.HeaderName = CabecalhoCsrf;
+            // Atrás do túnel (https), o cookie interno do antiforgery também só trafega com segurança.
+            opcoes.Cookie.SecurePolicy = ambiente.IsDevelopment()
+                ? CookieSecurePolicy.SameAsRequest
+                : CookieSecurePolicy.Always;
+        });
 
         services.AddRateLimiter(opcoes =>
         {
