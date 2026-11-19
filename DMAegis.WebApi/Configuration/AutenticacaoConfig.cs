@@ -18,6 +18,12 @@ public static class AutenticacaoConfig
     public const string EsquemaJogador = "Jogador";
     public const string NomeCookieJogador = "dmaegis.jogador";
 
+    /// <summary>
+    /// Token CSRF do jogador, num cookie separado do do mestre: o token é ligado à identidade de quem o pede,
+    /// e as rotas de jogador validam com a identidade do cookie de jogador.
+    /// </summary>
+    public const string NomeCookieCsrfJogador = "XSRF-TOKEN-JOGADOR";
+
     public const string MensagemNaoAutenticado = "Faça login para continuar.";
     public const string MensagemAcessoNegado = "Você não tem acesso a este recurso.";
     public const string MensagemMuitasTentativas = "Muitas tentativas. Aguarde um minuto e tente de novo.";

@@ -5,6 +5,7 @@ using DMAegis.WebApi.Configuration;
 using DMAegis.WebApi.Mappers;
 using DMAegis.WebApi.Validators;
 using FluentValidation;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,12 +24,36 @@ public class JogadorController : ControllerBase
     private readonly IJogadorService _jogadorService;
     private readonly ICanalMesa _canal;
     private readonly IValidator<MoverMinhaFichaRequestApiModel> _validatorMover;
+    private readonly IAntiforgery _antiforgery;
 
-    public JogadorController(IJogadorService jogadorService, ICanalMesa canal, IValidator<MoverMinhaFichaRequestApiModel> validatorMover)
+    public JogadorController(IJogadorService jogadorService, ICanalMesa canal,
+        IValidator<MoverMinhaFichaRequestApiModel> validatorMover, IAntiforgery antiforgery)
     {
         _jogadorService = jogadorService;
         _canal = canal;
         _validatorMover = validatorMover;
+        _antiforgery = antiforgery;
+    }
+
+    /// <summary>
+    /// Token CSRF do jogador (cookie XSRF-TOKEN-JOGADOR). Emitido aqui, com a identidade do cookie de jogador
+    /// (ou anônima, antes de entrar), que é a mesma usada para validar as rotas de jogador.
+    /// Pedir de novo depois de entrar.
+    /// </summary>
+    [HttpGet("api/jogador/csrf")]
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    public ActionResult<ApiResponse<object>> Csrf()
+    {
+        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+        Response.Cookies.Append(AutenticacaoConfig.NomeCookieCsrfJogador, tokens.RequestToken!, new CookieOptions
+        {
+            HttpOnly = false,
+            SameSite = SameSiteMode.Strict,
+            Secure = Request.IsHttps,
+            Path = "/",
+        });
+        return Ok(ApiResponse<object>.Sucesso(null!));
     }
 
     private static JogadorResponseApiModel ParaResponse(JogadorLogadoServiceModel jogador) => new()

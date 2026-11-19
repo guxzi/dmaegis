@@ -21,10 +21,22 @@ public class JogadorControllerTests
             IdCampanha = 10, IdRegistro = 100, NomePersonagem = "Lilica Lovejoy", NomeCampanha = "Teste", Marca = "abcdef0123456789",
         });
         var cliente = _api.CriarCliente();
-        await ApiDeTeste.RenovarCsrfAsync(cliente);
+        await RenovarCsrfJogadorAsync(cliente);
         var resposta = await cliente.PostAsJsonAsync("/api/jogador/entrar", new { codigo = "codigo-bom" });
         resposta.EnsureSuccessStatusCode();
+        // Depois de entrar, a identidade mudou: o token precisa ser pedido de novo.
+        await RenovarCsrfJogadorAsync(cliente);
         return cliente;
+    }
+
+    private static async Task RenovarCsrfJogadorAsync(HttpClient cliente)
+    {
+        var resposta = await cliente.GetAsync("/api/jogador/csrf");
+        resposta.EnsureSuccessStatusCode();
+        var cookie = resposta.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("XSRF-TOKEN-JOGADOR="));
+        var token = Uri.UnescapeDataString(cookie.Split(';')[0]["XSRF-TOKEN-JOGADOR=".Length..]);
+        cliente.DefaultRequestHeaders.Remove("X-XSRF-TOKEN");
+        cliente.DefaultRequestHeaders.Add("X-XSRF-TOKEN", token);
     }
 
     [Fact]
@@ -32,7 +44,7 @@ public class JogadorControllerTests
     {
         _api.Jogadores.Setup(s => s.EntrarAsync(It.IsAny<string>())).ThrowsAsync(new BusinessRuleException(BusinessErrors.ConviteInvalido));
         var cliente = _api.CriarCliente();
-        await ApiDeTeste.RenovarCsrfAsync(cliente);
+        await RenovarCsrfJogadorAsync(cliente);
 
         var resposta = await cliente.PostAsJsonAsync("/api/jogador/entrar", new { codigo = "x" });
 
@@ -85,6 +97,35 @@ public class JogadorControllerTests
         var resposta = await cliente.PutAsJsonAsync("/api/jogador/ficha/posicao", new { coluna = -1, linha = 2 });
 
         Assert.Equal(HttpStatusCode.BadRequest, resposta.StatusCode);
+        Assert.Equal(2, (await LerEnvelopeAsync(resposta)).GetProperty("responseCode").GetInt32());
+        _api.Jogadores.Verify(s => s.MoverMinhaFichaAsync(It.IsAny<JogadorLogadoServiceModel>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Mover_ComOTokenDoJogador_ChegaAoService()
+    {
+        var cliente = await EntrarComoJogadorAsync();
+
+        var resposta = await cliente.PutAsJsonAsync("/api/jogador/ficha/posicao", new { coluna = 3, linha = 4 });
+
+        Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+        _api.Jogadores.Verify(s => s.MoverMinhaFichaAsync(It.Is<JogadorLogadoServiceModel>(j => j.IdRegistro == 100), 3, 4), Times.Once);
+    }
+
+    [Fact]
+    public async Task Mover_ComTokenAnonimoDeAntesDeEntrar_Recusado()
+    {
+        _api.Jogadores.Setup(s => s.EntrarAsync("codigo-bom")).ReturnsAsync(new JogadorLogadoServiceModel
+        {
+            IdCampanha = 10, IdRegistro = 100, NomePersonagem = "Lilica Lovejoy", Marca = "abcdef0123456789",
+        });
+        var cliente = _api.CriarCliente();
+        await RenovarCsrfJogadorAsync(cliente);
+        (await cliente.PostAsJsonAsync("/api/jogador/entrar", new { codigo = "codigo-bom" })).EnsureSuccessStatusCode();
+
+        var resposta = await cliente.PutAsJsonAsync("/api/jogador/ficha/posicao", new { coluna = 3, linha = 4 });
+
+        Assert.NotEqual(HttpStatusCode.OK, resposta.StatusCode);
         _api.Jogadores.Verify(s => s.MoverMinhaFichaAsync(It.IsAny<JogadorLogadoServiceModel>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
     }
 
