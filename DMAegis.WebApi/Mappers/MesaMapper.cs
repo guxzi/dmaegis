@@ -5,6 +5,11 @@ namespace DMAegis.WebApi.Mappers;
 
 public static class MesaMapper
 {
+    private static CelulaApiModel ParaApi(CelulaServiceModel c) => new() { Coluna = c.Coluna, Linha = c.Linha };
+
+    public static List<CelulaServiceModel> ParaServiceModel(this IEnumerable<CelulaApiModel>? celulas) =>
+        (celulas ?? []).Select(c => new CelulaServiceModel { Coluna = c.Coluna, Linha = c.Linha }).ToList();
+
     public static SalvarMesaServiceModel ParaServiceModel(this SalvarMesaRequestApiModel request) => new()
     {
         Nome = request.Nome,
@@ -14,6 +19,7 @@ public static class MesaMapper
         DeslocamentoY = request.DeslocamentoY,
         GradeVisivel = request.GradeVisivel,
         MovimentoLivre = request.MovimentoLivre,
+        Nevoa = request.Nevoa,
     };
 
     public static InserirParticipantesServiceModel ParaServiceModel(this InserirParticipantesRequestApiModel request) => new()
@@ -63,6 +69,8 @@ public static class MesaMapper
         DeslocamentoY = mesa.DeslocamentoY,
         GradeVisivel = mesa.GradeVisivel,
         MovimentoLivre = mesa.MovimentoLivre,
+        Nevoa = mesa.Nevoa,
+        CelulasReveladas = mesa.CelulasReveladas.Select(ParaApi).ToList(),
         Ativa = mesa.Ativa,
         EmCombate = mesa.EmCombate,
         Rodada = mesa.Rodada,
@@ -99,6 +107,8 @@ public static class MesaMapper
         DeslocamentoY = visao.DeslocamentoY,
         GradeVisivel = visao.GradeVisivel,
         MovimentoLivre = visao.MovimentoLivre,
+        Nevoa = visao.Nevoa,
+        CelulasReveladas = visao.CelulasReveladas.Select(ParaApi).ToList(),
         EmCombate = visao.EmCombate,
         Rodada = visao.Rodada,
         IdParticipanteVez = visao.IdParticipanteVez,

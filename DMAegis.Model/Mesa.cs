@@ -30,6 +30,9 @@ public class Mesa
     /// <summary>st_movimento_livre (os jogadores podem mover a própria ficha)</summary>
     public bool MovimentoLivre { get; set; } = true;
 
+    /// <summary>st_nevoa (os jogadores só veem as células reveladas)</summary>
+    public bool Nevoa { get; set; }
+
     /// <summary>st_ativa (a que os jogadores veem; no máximo uma por campanha)</summary>
     public bool Ativa { get; set; }
 

@@ -16,6 +16,7 @@ public class MesaServiceTests
     private readonly Mock<IImagemRegistroRepository> _imagens = new();
     private readonly Mock<ICampanhaService> _campanhas = new();
     private readonly Mock<ICanalMesa> _canal = new();
+    private readonly Mock<ICelulaReveladaRepository> _celulas = new();
 
     private readonly List<ParticipanteMesa> _naMesa = [];
 
@@ -41,7 +42,7 @@ public class MesaServiceTests
     }
 
     private MesaService CriarService() => new(_mesas.Object, _participantes.Object, _condicoes.Object,
-        _registros.Object, _atributos.Object, _imagens.Object, _campanhas.Object, _canal.Object);
+        _registros.Object, _atributos.Object, _imagens.Object, _campanhas.Object, _canal.Object, _celulas.Object);
 
     private static async Task<int> CodigoAsync(Func<Task> acao) =>
         (await Assert.ThrowsAsync<BusinessRuleException>(acao)).Code;
@@ -203,5 +204,64 @@ public class MesaServiceTests
 
         var lilica = Assert.Single(mesa.Participantes);
         Assert.Equal((300, 2), (lilica.IdImagemRetrato, lilica.IdTipoRegistro));
+    }
+
+    [Fact]
+    public void FiltrarParaJogador_ComNevoa_EscondeMonstroNaNevoa_MasMostraPj()
+    {
+        var mesa = new MesaServiceModel
+        {
+            Nevoa = true,
+            CelulasReveladas = [new() { Coluna = 1, Linha = 1 }, new() { Coluna = 2, Linha = 1 }, new() { Coluna = 1, Linha = 2 }, new() { Coluna = 2, Linha = 2 }],
+            Participantes =
+            [
+                new ParticipanteServiceModel { Id = 1, Nome = "Lilica", Jogador = true, Visivel = true, Coluna = 9, Linha = 9, Tamanho = 1 },
+                new ParticipanteServiceModel { Id = 2, Nome = "Goblin à vista", Visivel = true, Coluna = 1, Linha = 1, Tamanho = 1 },
+                new ParticipanteServiceModel { Id = 3, Nome = "Goblin escondido", Visivel = true, Coluna = 5, Linha = 5, Tamanho = 1 },
+                new ParticipanteServiceModel { Id = 4, Nome = "Ogro meio revelado", Visivel = true, Coluna = 2, Linha = 2, Tamanho = 2 },
+                new ParticipanteServiceModel { Id = 5, Nome = "Ogro revelado", Visivel = true, Coluna = 1, Linha = 1, Tamanho = 2 },
+            ],
+        };
+
+        var visao = MesaService.FiltrarParaJogador(mesa, idRegistroJogador: null);
+
+        Assert.Equal([1, 2, 5], visao.Participantes.Select(p => p.Id));
+        Assert.True(visao.Nevoa);
+        Assert.Equal(4, visao.CelulasReveladas.Count);
+    }
+
+    [Fact]
+    public void FiltrarParaJogador_SemNevoa_NaoMandaCelulas()
+    {
+        var mesa = new MesaServiceModel { Nevoa = false, CelulasReveladas = [new() { Coluna = 1, Linha = 1 }] };
+        Assert.Empty(MesaService.FiltrarParaJogador(mesa, null).CelulasReveladas);
+    }
+
+    [Fact]
+    public async Task AlterarNevoaAsync_RevelaEEscondeEmLote_EAvisa()
+    {
+        List<(int, int)>? reveladas = null;
+        List<(int, int)>? escondidas = null;
+        _celulas.Setup(c => c.RevelarAsync(5, It.IsAny<IEnumerable<(int Coluna, int Linha)>>()))
+            .Callback<int, IEnumerable<(int Coluna, int Linha)>>((_, l) => reveladas = l.Select(x => (x.Coluna, x.Linha)).ToList());
+        _celulas.Setup(c => c.EsconderAsync(5, It.IsAny<IEnumerable<(int Coluna, int Linha)>>()))
+            .Callback<int, IEnumerable<(int Coluna, int Linha)>>((_, l) => escondidas = l.Select(x => (x.Coluna, x.Linha)).ToList());
+        _celulas.Setup(c => c.ListarPorMesaAsync(5)).ReturnsAsync([]);
+
+        await CriarService().AlterarNevoaAsync(1, 5,
+            [new() { Coluna = 1, Linha = 1 }, new() { Coluna = 1, Linha = 1 }, new() { Coluna = 2, Linha = 1 }],
+            [new() { Coluna = 2, Linha = 1 }, new() { Coluna = 7, Linha = 7 }]);
+
+        Assert.Equal([(1, 1), (2, 1)], reveladas!);
+        Assert.Equal([(7, 7)], escondidas!);
+        _canal.Verify(c => c.Avisar(10), Times.Once);
+    }
+
+    [Fact]
+    public async Task AlterarNevoaAsync_MesaAlheia_Codigo17()
+    {
+        Assert.Equal(BusinessErrors.MesaNaoEncontrada.Code,
+            await CodigoAsync(() => CriarService().AlterarNevoaAsync(1, 6, [new() { Coluna = 1, Linha = 1 }], [])));
+        _celulas.Verify(c => c.RevelarAsync(It.IsAny<int>(), It.IsAny<IEnumerable<(int Coluna, int Linha)>>()), Times.Never);
     }
 }

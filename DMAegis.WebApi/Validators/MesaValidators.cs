@@ -79,3 +79,17 @@ public class MoverMinhaFichaValidator : AbstractValidator<MoverMinhaFichaRequest
         RuleFor(x => x.Linha).InclusiveBetween(0, RegrasMesaApi.PosicaoMaxima).WithMessage("A posição está fora do mapa.");
     }
 }
+
+public class AlterarNevoaValidator : AbstractValidator<AlterarNevoaRequestApiModel>
+{
+    public AlterarNevoaValidator()
+    {
+        RuleFor(x => x).Must(x => (x.Revelar?.Count ?? 0) + (x.Esconder?.Count ?? 0) <= 5000)
+            .WithMessage("No máximo 5000 células por vez.");
+        RuleForEach(x => x.Revelar).Must(CelulaValida).WithMessage("Há células fora do mapa.");
+        RuleForEach(x => x.Esconder).Must(CelulaValida).WithMessage("Há células fora do mapa.");
+    }
+
+    private static bool CelulaValida(CelulaApiModel? c) =>
+        c is not null && c.Coluna is >= 0 and <= RegrasMesaApi.PosicaoMaxima && c.Linha is >= 0 and <= RegrasMesaApi.PosicaoMaxima;
+}

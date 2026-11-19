@@ -34,6 +34,12 @@ public class ParticipanteServiceModel
     public List<string> Condicoes { get; set; } = [];
 }
 
+public class CelulaServiceModel
+{
+    public int Coluna { get; set; }
+    public int Linha { get; set; }
+}
+
 public class MesaServiceModel
 {
     public int Id { get; set; }
@@ -45,6 +51,8 @@ public class MesaServiceModel
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
+    public bool Nevoa { get; set; }
+    public List<CelulaServiceModel> CelulasReveladas { get; set; } = [];
     public bool Ativa { get; set; }
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
@@ -63,6 +71,7 @@ public class SalvarMesaServiceModel
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; } = true;
     public bool MovimentoLivre { get; set; } = true;
+    public bool Nevoa { get; set; }
 }
 
 public class InserirParticipantesServiceModel
@@ -125,6 +134,8 @@ public class VisaoJogadorServiceModel
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
+    public bool Nevoa { get; set; }
+    public List<CelulaServiceModel> CelulasReveladas { get; set; } = [];
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
     public int? IdParticipanteVez { get; set; }
@@ -151,6 +162,13 @@ public interface IMesaService
 
     Task<VisaoJogadorServiceModel> ObterVisaoJogadorAsync(int idUsuario, int idMesa);
 
+    /// <summary>Revela e esconde células da névoa num lote só (o que o pincel pintou de uma vez).</summary>
+    Task<MesaServiceModel> AlterarNevoaAsync(int idUsuario, int idMesa,
+        IEnumerable<CelulaServiceModel> revelar, IEnumerable<CelulaServiceModel> esconder);
+
+    /// <summary>Cobre a mesa inteira de novo.</summary>
+    Task<MesaServiceModel> EsconderTudoAsync(int idUsuario, int idMesa);
+
     /// <summary>
     /// Estado completo da mesa ativa da campanha, sem conferir dono: só para o JogadorService,
     /// que já conferiu o convite e sempre filtra com FiltrarParaJogador antes de responder.
@@ -171,6 +189,7 @@ public class MesaService : IMesaService
     private readonly IImagemRegistroRepository _imagemRepository;
     private readonly ICampanhaService _campanhaService;
     private readonly ICanalMesa _canal;
+    private readonly ICelulaReveladaRepository _celulaRepository;
 
     public MesaService(
         IMesaRepository mesaRepository,
@@ -180,7 +199,8 @@ public class MesaService : IMesaService
         IAtributoRegistroRepository atributoRepository,
         IImagemRegistroRepository imagemRepository,
         ICampanhaService campanhaService,
-        ICanalMesa canal)
+        ICanalMesa canal,
+        ICelulaReveladaRepository celulaRepository)
     {
         _mesaRepository = mesaRepository;
         _participanteRepository = participanteRepository;
@@ -190,6 +210,7 @@ public class MesaService : IMesaService
         _imagemRepository = imagemRepository;
         _campanhaService = campanhaService;
         _canal = canal;
+        _celulaRepository = celulaRepository;
     }
 
     // ---------- Mesas ----------
@@ -226,6 +247,7 @@ public class MesaService : IMesaService
             DeslocamentoY = dados.DeslocamentoY,
             GradeVisivel = dados.GradeVisivel,
             MovimentoLivre = dados.MovimentoLivre,
+            Nevoa = dados.Nevoa,
             Ativa = primeira,
             DataCriacao = agora,
             DataAtualizacao = agora,
@@ -246,6 +268,7 @@ public class MesaService : IMesaService
         mesa.DeslocamentoY = dados.DeslocamentoY;
         mesa.GradeVisivel = dados.GradeVisivel;
         mesa.MovimentoLivre = dados.MovimentoLivre;
+        mesa.Nevoa = dados.Nevoa;
         mesa.DataAtualizacao = Agora();
         await _mesaRepository.AtualizarAsync(mesa);
         return await AvisarEMontarAsync(mesa);
@@ -400,7 +423,11 @@ public class MesaService : IMesaService
     /// </summary>
     public static VisaoJogadorServiceModel FiltrarParaJogador(MesaServiceModel mesa, int? idRegistroJogador)
     {
-        var visiveis = mesa.Participantes.Where(p => p.Visivel).ToList();
+        // Com névoa, quem não é PJ só aparece se todas as células que a ficha ocupa estiverem reveladas.
+        var reveladas = mesa.CelulasReveladas.Select(c => (c.Coluna, c.Linha)).ToHashSet();
+        var visiveis = mesa.Participantes
+            .Where(p => p.Visivel && (!mesa.Nevoa || p.Jogador || ForaDaNevoa(p, reveladas)))
+            .ToList();
         return new VisaoJogadorServiceModel
         {
             IdMesa = mesa.Id,
@@ -411,6 +438,8 @@ public class MesaService : IMesaService
             DeslocamentoY = mesa.DeslocamentoY,
             GradeVisivel = mesa.GradeVisivel,
             MovimentoLivre = mesa.MovimentoLivre,
+            Nevoa = mesa.Nevoa,
+            CelulasReveladas = mesa.Nevoa ? [.. mesa.CelulasReveladas] : [],
             EmCombate = mesa.EmCombate,
             Rodada = mesa.Rodada,
             IdParticipanteVez = visiveis.Any(p => p.Id == mesa.IdParticipanteVez) ? mesa.IdParticipanteVez : null,
@@ -432,6 +461,48 @@ public class MesaService : IMesaService
                 EhMinha = idRegistroJogador.HasValue && p.IdRegistro == idRegistroJogador,
             }).ToList(),
         };
+    }
+
+    /// <summary>Ficha fora do mapa não aparece no palco; no mapa, precisa de todas as células reveladas.</summary>
+    public static bool ForaDaNevoa(ParticipanteServiceModel p, HashSet<(int Coluna, int Linha)> reveladas)
+    {
+        if (p.Coluna is not int coluna || p.Linha is not int linha)
+            return true;
+        var lado = Math.Max(1, p.Tamanho);
+        for (var dc = 0; dc < lado; dc++)
+            for (var dl = 0; dl < lado; dl++)
+                if (!reveladas.Contains((coluna + dc, linha + dl)))
+                    return false;
+        return true;
+    }
+
+    // ---------- Névoa ----------
+
+    public const int MaximoCelulasPorLote = 5000;
+
+    public async Task<MesaServiceModel> AlterarNevoaAsync(int idUsuario, int idMesa,
+        IEnumerable<CelulaServiceModel> revelar, IEnumerable<CelulaServiceModel> esconder)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        var paraRevelar = revelar.Select(c => (c.Coluna, c.Linha)).Distinct().ToList();
+        var paraEsconder = esconder.Select(c => (c.Coluna, c.Linha)).Distinct().Except(paraRevelar).ToList();
+        if (paraRevelar.Count + paraEsconder.Count > MaximoCelulasPorLote)
+            throw new BusinessRuleException((BusinessErrors.DadosInvalidos.Code, $"No máximo {MaximoCelulasPorLote} células por vez."));
+
+        using (var transacao = Transacao.Iniciar())
+        {
+            await _celulaRepository.RevelarAsync(idMesa, paraRevelar);
+            await _celulaRepository.EsconderAsync(idMesa, paraEsconder);
+            transacao.Complete();
+        }
+        return await AvisarEMontarAsync(mesa);
+    }
+
+    public async Task<MesaServiceModel> EsconderTudoAsync(int idUsuario, int idMesa)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        await _celulaRepository.EsconderTudoAsync(idMesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     // ---------- Apoio ----------
@@ -530,6 +601,9 @@ public class MesaService : IMesaService
             DeslocamentoY = mesa.DeslocamentoY,
             GradeVisivel = mesa.GradeVisivel,
             MovimentoLivre = mesa.MovimentoLivre,
+            Nevoa = mesa.Nevoa,
+            CelulasReveladas = (await _celulaRepository.ListarPorMesaAsync(mesa.Id))
+                .Select(c => new CelulaServiceModel { Coluna = c.Coluna, Linha = c.Linha }).ToList(),
             Ativa = mesa.Ativa,
             EmCombate = mesa.EmCombate,
             Rodada = mesa.Rodada,

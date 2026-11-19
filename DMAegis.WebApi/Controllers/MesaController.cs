@@ -20,19 +20,22 @@ public class MesaController : ControllerBase
     private readonly IValidator<InserirParticipantesRequestApiModel> _validatorInserir;
     private readonly IValidator<SalvarParticipanteRequestApiModel> _validatorParticipante;
     private readonly IValidator<MoverParticipanteRequestApiModel> _validatorMover;
+    private readonly IValidator<AlterarNevoaRequestApiModel> _validatorNevoa;
 
     public MesaController(
         IMesaService mesaService,
         IValidator<SalvarMesaRequestApiModel> validatorMesa,
         IValidator<InserirParticipantesRequestApiModel> validatorInserir,
         IValidator<SalvarParticipanteRequestApiModel> validatorParticipante,
-        IValidator<MoverParticipanteRequestApiModel> validatorMover)
+        IValidator<MoverParticipanteRequestApiModel> validatorMover,
+        IValidator<AlterarNevoaRequestApiModel> validatorNevoa)
     {
         _mesaService = mesaService;
         _validatorMesa = validatorMesa;
         _validatorInserir = validatorInserir;
         _validatorParticipante = validatorParticipante;
         _validatorMover = validatorMover;
+        _validatorNevoa = validatorNevoa;
     }
 
     private ActionResult<ApiResponse<MesaResponseApiModel>> Mesa(MesaServiceModel mesa) =>
@@ -118,6 +121,18 @@ public class MesaController : ControllerBase
     [HttpDelete("api/mesas/{id:int}/combate")]
     public async Task<ActionResult<ApiResponse<MesaResponseApiModel>>> EncerrarCombate(int id) =>
         Mesa(await _mesaService.EncerrarCombateAsync(User.ObterIdUsuario(), id));
+
+    [HttpPut("api/mesas/{id:int}/nevoa")]
+    public async Task<ActionResult<ApiResponse<MesaResponseApiModel>>> AlterarNevoa(int id, [FromBody] AlterarNevoaRequestApiModel request)
+    {
+        await _validatorNevoa.ValidarOuLancarAsync(request);
+        return Mesa(await _mesaService.AlterarNevoaAsync(User.ObterIdUsuario(), id,
+            request.Revelar.ParaServiceModel(), request.Esconder.ParaServiceModel()));
+    }
+
+    [HttpDelete("api/mesas/{id:int}/nevoa")]
+    public async Task<ActionResult<ApiResponse<MesaResponseApiModel>>> EsconderTudo(int id) =>
+        Mesa(await _mesaService.EsconderTudoAsync(User.ObterIdUsuario(), id));
 
     /// <summary>O estado filtrado que os jogadores veem (usado pela janela de projeção).</summary>
     [HttpGet("api/mesas/{id:int}/visao-jogador")]

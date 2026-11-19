@@ -9,6 +9,7 @@ public class SalvarMesaRequestApiModel
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; } = true;
     public bool MovimentoLivre { get; set; } = true;
+    public bool Nevoa { get; set; }
 }
 
 /// <summary>Todos os PJs, um registro do caderno (com quantidade) ou uma ficha avulsa (só nome).</summary>
@@ -93,6 +94,8 @@ public class MesaResponseApiModel
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
+    public bool Nevoa { get; set; }
+    public List<CelulaApiModel> CelulasReveladas { get; set; } = [];
     public bool Ativa { get; set; }
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
@@ -128,8 +131,23 @@ public class VisaoJogadorResponseApiModel
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
+    public bool Nevoa { get; set; }
+    public List<CelulaApiModel> CelulasReveladas { get; set; } = [];
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
     public int? IdParticipanteVez { get; set; }
     public List<ParticipanteVisaoResponseApiModel> Participantes { get; set; } = [];
+}
+
+public class CelulaApiModel
+{
+    public int Coluna { get; set; }
+    public int Linha { get; set; }
+}
+
+/// <summary>O que o pincel pintou de uma vez: células para revelar e para esconder.</summary>
+public class AlterarNevoaRequestApiModel
+{
+    public List<CelulaApiModel> Revelar { get; set; } = [];
+    public List<CelulaApiModel> Esconder { get; set; } = [];
 }
