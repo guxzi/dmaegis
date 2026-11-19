@@ -51,8 +51,13 @@ app.MapControllers();
 // Liga com DMAEGIS_SERVIR_SITE=1 (o "Abrir mesa para os jogadores.cmd" faz isso).
 if (Environment.GetEnvironmentVariable("DMAEGIS_SERVIR_SITE") == "1")
 {
-    var pastaSite = Path.GetFullPath(Environment.GetEnvironmentVariable("DMAEGIS_SITE")
-                                     ?? Path.Combine(app.Environment.ContentRootPath, "..", "dmaegis.web", "dist"));
+    // Com "dotnet run --project" a raiz é a pasta do projeto; rodando a DLL da raiz do repositório, é o repositório.
+    var raiz = app.Environment.ContentRootPath;
+    var pastaSite = Environment.GetEnvironmentVariable("DMAEGIS_SITE") is { Length: > 0 } configurada
+        ? Path.GetFullPath(configurada)
+        : new[] { Path.Combine(raiz, "..", "dmaegis.web", "dist"), Path.Combine(raiz, "dmaegis.web", "dist") }
+            .Select(Path.GetFullPath)
+            .FirstOrDefault(Directory.Exists) ?? Path.GetFullPath(Path.Combine(raiz, "..", "dmaegis.web", "dist"));
     if (Directory.Exists(pastaSite))
     {
         var arquivos = new PhysicalFileProvider(pastaSite);

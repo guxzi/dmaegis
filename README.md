@@ -26,6 +26,8 @@ Durante a sessão, o mestre vive procurando coisas: o nome daquele NPC, a regra 
   - busca rápida com Ctrl+K;
   - aba de regras e dicas de condução, só do sistema da mesa.
 - **Galeria:** todas as imagens da campanha ligadas ao nome do NPC ou do local. Enviar imagem com um nome novo já cria o registro.
+- **Mesa virtual:** mapa da galeria com grade ajustável, fichas redondas com retrato (ou a inicial, enquanto o personagem não tem imagem), pan e zoom. O combate fica ao lado: iniciativa (monstros rolam d20 + bônus), turno e rodada (atalho N), dano e cura, condições do sistema da mesa e fichas ocultas.
+- **Jogadores pelo navegador:** cada PJ recebe um link. O jogador abre, vê a mesa em tempo real e move a própria ficha. Ele vê só o que deve: nada de PV de monstros, fichas ocultas, anotações ou segredos.
 - **Projeção para os jogadores:** uma janela limpa para compartilhar a tela ou levar ao segundo monitor. Qualquer imagem vai para lá com um clique, com ou sem o título. Também dá para copiar ou baixar a imagem.
 - **Visual:** espaço profundo, cobalto e violeta, estrelas que viajam a cada página e uma faísca de luz no clique. As animações desligam quando o sistema pede menos movimento.
 
@@ -63,6 +65,22 @@ Você precisa do [.NET 10 SDK](https://dotnet.microsoft.com/download), do [Node.
    ```
 
    O site fica em http://localhost:5173 e a API em http://localhost:5080.
+
+## Jogar com os amigos (mesa pela internet)
+
+O DMAegis roda no seu PC. Para os jogadores abrirem a mesa de casa, um túnel do Cloudflare cria um endereço https que aponta para o seu computador enquanto vocês jogam. Não tem custo e o banco continua no seu PC.
+
+1. Instale o cloudflared uma vez:
+
+   ```bash
+   winget install --id Cloudflare.cloudflared
+   ```
+
+2. Feche a janela "DMAegis API", se estiver aberta, e dê dois cliques em `Abrir mesa para os jogadores.cmd`. Ele compila o site, sobe a API em modo mesa (sem Swagger e com cookies seguros) e mostra um endereço como `https://alguma-coisa.trycloudflare.com`.
+3. Abra esse endereço no seu navegador e entre como mestre.
+4. Na página **Mesa**, clique em **Jogadores**, cole o endereço e gere o link de cada PJ. Mande cada link para o jogador do personagem.
+
+O endereço muda a cada vez que você abre a mesa, então gere os links de novo a cada sessão. Trocar o link de um personagem derruba o acesso antigo.
 
 ## Testes
 
