@@ -486,4 +486,3 @@ $RECYCLE.BIN/
 node_modules/
 dist/
 *.local
-.superpowers/

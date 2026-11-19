@@ -1,6 +1,6 @@
-# DMAegis — Modelo de dados do MVP (Fase 1)
+# Modelo de dados do MVP (fase 1)
 
-> Fonte: `docs/superpowers/specs/2026-11-17-dmaegis-mvp-design.md`, seção 7. Script: `database/01_criar_tabelas.sql`.
+Vem da seção 7 do [design do MVP](design/mvp.md). O script é o `database/01_criar_tabelas.sql`.
 
 ```mermaid
 erDiagram

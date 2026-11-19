@@ -1,5 +1,5 @@
 -- DMAegis — 07: jogadores pelo link (mesa virtual, entrega 2)
--- Design: docs/superpowers/specs/2026-11-19-dmaegis-mesa-virtual-design.md (seções 6 e 8).
+-- Design: docs/design/mesa-virtual.md (seções 6 e 8).
 -- Um convite por personagem de jogador. O banco guarda só o hash SHA-256 do código do link;
 -- gerar de novo troca o hash e o link antigo para de funcionar.
 

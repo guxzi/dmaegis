@@ -1,4 +1,4 @@
-// Lembretes de Daggerheart, só as mecânicas, em texto próprio (sem copiar o SRD; veja o AGENTS.md).
+// Lembretes de Daggerheart, só as mecânicas, em texto próprio (sem copiar o SRD; veja docs/CONVENCOES.md).
 export const REGRAS_DAGGERHEART = {
   secoes: [
     {

@@ -1,5 +1,5 @@
 -- DMAegis — 08: névoa de guerra (mesa virtual, entrega 3)
--- Design: docs/superpowers/specs/2026-11-19-dmaegis-mesa-virtual-design.md (seções 6 e 9).
+-- Design: docs/design/mesa-virtual.md (seções 6 e 9).
 -- Com a névoa ligada, os jogadores só veem as células reveladas pelo mestre.
 
 USE dmaegis;

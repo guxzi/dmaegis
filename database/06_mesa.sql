@@ -1,5 +1,5 @@
 -- DMAegis — 06: mesa virtual (entrega 1)
--- Design: docs/superpowers/specs/2026-11-19-dmaegis-mesa-virtual-design.md (seção 6).
+-- Design: docs/design/mesa-virtual.md (seção 6).
 -- Uma campanha tem várias mesas (mapas preparados) e no máximo uma ativa, a que os jogadores veem.
 -- Cada mesa tem participantes (fichas no mapa e linhas da iniciativa) com condições.
 

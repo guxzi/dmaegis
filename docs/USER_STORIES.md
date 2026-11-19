@@ -1,6 +1,6 @@
-# DMAegis — Histórias de usuário do MVP (Fase 1)
+# Histórias de usuário do MVP (fase 1)
 
-> Fonte: `docs/superpowers/specs/2026-11-17-dmaegis-mvp-design.md`. Cada história tem critérios de aceite que podem ser conferidos.
+Saíram do [design do MVP](design/mvp.md). Cada história tem critérios de aceite que dá para conferir.
 > Formato: **Como mestre, quero … para …**
 
 ## Conta

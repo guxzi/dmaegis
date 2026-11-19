@@ -4,8 +4,8 @@
  * (desenho próprio, em public/cursores/), para ficar elegante e destacar no fundo escuro:
  * - seta.svg: o cursor de sempre;
  * - mao.svg: a mão apontando, sobre o que é clicável.
- * Pedido do usuário: o cursor do site aparece SEMPRE enquanto o site estiver na tela — também em campos de texto,
- * no mapa e no pincel da névoa. Por isso as regras usam !important e cobrem todos os elementos e pseudo-elementos.
+ * O cursor do site aparece sempre, inclusive em campos de texto, no mapa e no pincel da névoa.
+ * Por isso as regras usam !important e cobrem todos os elementos e pseudo-elementos.
  */
 
 :root {

@@ -1,5 +1,5 @@
 -- DMAegis — 05: imagens (mapas) dos registros do caderno
--- Pedido do usuário em 18/11/2026: anexar mapas a locais e a outros registros.
+-- 18/11/2026: mapas anexados a locais e a outros registros do caderno.
 -- As imagens ficam no próprio banco (MEDIUMBLOB, até 16 MB; a aplicação limita a 15 MB)
 -- e somem junto com o registro (CASCADE). Prefixo novo: bi_ (binário).
 
