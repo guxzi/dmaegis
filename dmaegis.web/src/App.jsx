@@ -11,6 +11,7 @@ import RegistroDetalhe from './paginas/RegistroDetalhe.jsx';
 import RegistroEditar from './paginas/RegistroEditar.jsx';
 import Escudo from './paginas/Escudo.jsx';
 import Galeria from './paginas/Galeria.jsx';
+import Mesa from './paginas/Mesa.jsx';
 import Projecao from './paginas/Projecao.jsx';
 import SessaoPreparo from './paginas/SessaoPreparo.jsx';
 import Sessoes from './paginas/Sessoes.jsx';
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/campanhas/:id/sessoes/:idSessao" element={protegida(<SessaoPreparo />)} />
         <Route path="/campanhas/:id/escudo" element={protegida(<Escudo />)} />
         <Route path="/campanhas/:id/galeria" element={protegida(<Galeria />)} />
+        <Route path="/campanhas/:id/mesa" element={protegida(<Mesa />)} />
         <Route path="/projecao" element={protegida(<Projecao />)} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

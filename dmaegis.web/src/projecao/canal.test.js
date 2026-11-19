@@ -26,3 +26,11 @@ test('tela limpa, JSON estragado ou armazenamento bloqueado → nada', () => {
   expect(lerUltimaProjecao(bloqueado)).toBeNull();
   expect(() => gravarUltimaProjecao({ id: 1, titulo: '' }, bloqueado)).not.toThrow();
 });
+
+test('a projeção também pode mostrar a mesa', () => {
+  const armazenamento = memoria();
+  gravarUltimaProjecao({ idMesa: 3 }, armazenamento);
+  expect(lerUltimaProjecao(armazenamento)).toEqual({ idMesa: 3 });
+  armazenamento.setItem('dmaegis:projecao', '{"idMesa":"3"}');
+  expect(lerUltimaProjecao(armazenamento)).toBeNull();
+});

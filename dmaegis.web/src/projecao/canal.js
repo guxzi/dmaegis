@@ -11,12 +11,17 @@ function armazenamentoPadrao() {
   }
 }
 
-// { id, titulo } da última imagem mostrada, ou null (tela de espera).
+// O que a projeção mostra: { id, titulo } (uma imagem), { idMesa } (a mesa) ou null (tela de espera).
+export function normalizarProjecao(valor) {
+  if (!valor) return null;
+  if (Number.isInteger(valor.idMesa)) return { idMesa: valor.idMesa };
+  if (!Number.isInteger(valor.id)) return null;
+  return { id: valor.id, titulo: typeof valor.titulo === 'string' ? valor.titulo : '' };
+}
+
 export function lerUltimaProjecao(armazenamento = armazenamentoPadrao()) {
   try {
-    const valor = JSON.parse(armazenamento?.getItem(CHAVE) ?? 'null');
-    if (!valor || !Number.isInteger(valor.id)) return null;
-    return { id: valor.id, titulo: typeof valor.titulo === 'string' ? valor.titulo : '' };
+    return normalizarProjecao(JSON.parse(armazenamento?.getItem(CHAVE) ?? 'null'));
   } catch {
     return null;
   }
@@ -30,26 +35,40 @@ export function gravarUltimaProjecao(projecao, armazenamento = armazenamentoPadr
   }
 }
 
-function enviar(projecao) {
-  gravarUltimaProjecao(projecao);
+function postar(mensagem) {
   if (typeof BroadcastChannel === 'undefined') return;
   const canal = new BroadcastChannel(NOME_CANAL);
-  canal.postMessage(projecao);
+  canal.postMessage(mensagem);
   canal.close();
+}
+
+function enviar(projecao) {
+  gravarUltimaProjecao(projecao);
+  postar(projecao);
 }
 
 // Mostra a imagem na tela dos jogadores. O título é opcional (um mapa do mestre não deve revelar nada).
 export const mostrarNaProjecao = (imagem, comTitulo = false) =>
   enviar({ id: imagem.id, titulo: comTitulo ? imagem.titulo : '' });
 
+// Mostra a mesa (mapa, fichas e iniciativa) na tela dos jogadores, já filtrada.
+export const mostrarMesaNaProjecao = (idMesa) => enviar({ idMesa });
+
+// Avisa a projeção que a mesa mudou (ficha movida, turno, PV), para ela buscar o estado de novo.
+export const avisarMesaMudou = (idMesa) => postar({ mesaMudou: idMesa });
+
 // Volta a projeção para a tela de espera.
 export const limparProjecao = () => enviar(null);
 
-// Avisa a cada imagem nova. Devolve a função que para de ouvir.
-export function ouvirProjecao(aoReceber) {
+// Avisa a cada imagem ou mesa nova. Devolve a função que para de ouvir.
+// `aoMudarMesa(idMesa)` recebe os avisos de mudança da mesa mostrada.
+export function ouvirProjecao(aoReceber, aoMudarMesa = () => {}) {
   if (typeof BroadcastChannel === 'undefined') return () => {};
   const canal = new BroadcastChannel(NOME_CANAL);
-  canal.onmessage = (evento) => aoReceber(evento.data && Number.isInteger(evento.data.id) ? evento.data : null);
+  canal.onmessage = (evento) => {
+    if (Number.isInteger(evento.data?.mesaMudou)) aoMudarMesa(evento.data.mesaMudou);
+    else aoReceber(normalizarProjecao(evento.data));
+  };
   return () => canal.close();
 }
 

@@ -24,6 +24,7 @@ export default function Cabecalho({ idCampanha, aoEscolherRegistro, className = 
           <div className="nav-campanha mx-lg-auto flex-grow-1 flex-lg-grow-0">
             <NavLink to={base} end>Visão geral</NavLink>
             <NavLink to={`${base}/escudo`}>Escudo</NavLink>
+            <NavLink to={`${base}/mesa`}>Mesa</NavLink>
             <NavLink to={`${base}/caderno`}>Caderno</NavLink>
             <NavLink to={`${base}/galeria`}>Galeria</NavLink>
             <NavLink to={`${base}/sessoes`}>Sessões</NavLink>

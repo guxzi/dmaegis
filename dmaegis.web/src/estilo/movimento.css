@@ -113,6 +113,27 @@
   .visualizador-imagem { animation: esmaecer 0.25s ease backwards; }
   .cartao-lateral { animation: deslizar-lateral 0.38s var(--dm-ease) backwards; }
   .visualizador-palco > img { animation: imagem-surgir 0.4s var(--dm-ease) backwards; }
+  /* ---------- Mesa virtual ---------- */
+  .ficha-orbita { animation: girar 9s linear infinite; }
+  .ficha-vez .ficha-disco { animation: pulsar-vez 2.4s ease-in-out infinite; }
+  .linha-iniciativa.da-vez::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.12) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: varrer-luz 2.8s var(--dm-ease) infinite;
+    pointer-events: none;
+  }
+  .faixa-vez { animation: faixa-surgir 0.45s var(--dm-ease) backwards; }
+  .anuncio-vez { animation: anunciar 3s var(--dm-ease) forwards; }
+  .painel-ficha { animation: surgir-leve 0.3s var(--dm-ease) backwards; }
+  .painel-ficha.efeito-dano { animation: dano-flash 0.6s ease; }
+  .painel-ficha.efeito-cura { animation: cura-flash 0.6s ease; }
+  .lista-iniciativa > li { animation: surgir-leve 0.35s var(--dm-ease) backwards; }
+  .ajuste-grade { animation: surgir-leve 0.25s var(--dm-ease) backwards; }
+  .palco-destino { animation: pulsar-destino 1s ease-in-out infinite; }
+  .ficha { animation: ficha-chegar 0.45s var(--dm-ease) backwards; }
 }
 
 @keyframes entrar-pagina {
@@ -153,4 +174,39 @@
 }
 @keyframes imagem-surgir {
   from { opacity: 0; transform: scale(0.97); }
+}
+@keyframes pulsar-vez {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(7, 11, 31, 0.9), 0 6px 16px rgba(0, 0, 0, 0.6), 0 0 16px color-mix(in srgb, var(--cor-ficha) 50%, transparent); }
+  50% { box-shadow: 0 0 0 2px rgba(7, 11, 31, 0.9), 0 6px 16px rgba(0, 0, 0, 0.6), 0 0 34px 6px color-mix(in srgb, var(--cor-ficha) 85%, transparent); }
+}
+@keyframes varrer-luz {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+@keyframes faixa-surgir {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+}
+@keyframes anunciar {
+  0% { opacity: 0; transform: translate(-50%, 16px) scale(0.94); }
+  12% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  78% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -8px) scale(0.98); }
+}
+@keyframes dano-flash {
+  0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.8); transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); box-shadow: 0 0 30px 4px rgba(248, 113, 113, 0.45); }
+  60% { transform: translateX(-2px); }
+  100% { transform: none; }
+}
+@keyframes cura-flash {
+  0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.8); }
+  50% { box-shadow: 0 0 34px 6px rgba(52, 211, 153, 0.4); }
+}
+@keyframes pulsar-destino {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+@keyframes ficha-chegar {
+  from { opacity: 0; }
 }
