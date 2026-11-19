@@ -15,6 +15,7 @@ public class MesaServiceTests
     private readonly Mock<IAtributoRegistroRepository> _atributos = new();
     private readonly Mock<IImagemRegistroRepository> _imagens = new();
     private readonly Mock<ICampanhaService> _campanhas = new();
+    private readonly Mock<ICanalMesa> _canal = new();
 
     private readonly List<ParticipanteMesa> _naMesa = [];
 
@@ -40,7 +41,7 @@ public class MesaServiceTests
     }
 
     private MesaService CriarService() => new(_mesas.Object, _participantes.Object, _condicoes.Object,
-        _registros.Object, _atributos.Object, _imagens.Object, _campanhas.Object);
+        _registros.Object, _atributos.Object, _imagens.Object, _campanhas.Object, _canal.Object);
 
     private static async Task<int> CodigoAsync(Func<Task> acao) =>
         (await Assert.ThrowsAsync<BusinessRuleException>(acao)).Code;
@@ -165,6 +166,7 @@ public class MesaServiceTests
 
         Assert.Equal((1, 1), (mesa.IdParticipanteVez, mesa.Rodada));
         _mesas.Verify(m => m.AtualizarCombateAsync(5, true, 1, 1));
+        _canal.Verify(c => c.Avisar(10), Times.Once);
     }
 
     [Fact]

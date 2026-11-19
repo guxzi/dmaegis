@@ -8,6 +8,7 @@ public class SalvarMesaRequestApiModel
     public int DeslocamentoX { get; set; }
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; } = true;
+    public bool MovimentoLivre { get; set; } = true;
 }
 
 /// <summary>Todos os PJs, um registro do caderno (com quantidade) ou uma ficha avulsa (só nome).</summary>
@@ -91,6 +92,7 @@ public class MesaResponseApiModel
     public int DeslocamentoX { get; set; }
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
+    public bool MovimentoLivre { get; set; }
     public bool Ativa { get; set; }
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
@@ -125,6 +127,7 @@ public class VisaoJogadorResponseApiModel
     public int DeslocamentoX { get; set; }
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
+    public bool MovimentoLivre { get; set; }
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
     public int? IdParticipanteVez { get; set; }

@@ -1,0 +1,98 @@
+using DMAegis.Services;
+using DMAegis.WebApi.ApiModels;
+using DMAegis.WebApi.ApiModels.Mesas;
+using DMAegis.WebApi.Configuration;
+using DMAegis.WebApi.Mappers;
+using DMAegis.WebApi.Validators;
+using FluentValidation;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+
+namespace DMAegis.WebApi.Controllers;
+
+/// <summary>
+/// O lado dos jogadores, que entram pelo link de convite (cookie próprio, esquema "Jogador").
+/// Só a visão filtrada da mesa ativa: nada do caderno, das anotações ou dos segredos passa por aqui.
+/// </summary>
+[ApiController]
+[Authorize(AuthenticationSchemes = AutenticacaoConfig.EsquemaJogador)]
+public class JogadorController : ControllerBase
+{
+    private readonly IJogadorService _jogadorService;
+    private readonly ICanalMesa _canal;
+    private readonly IValidator<MoverMinhaFichaRequestApiModel> _validatorMover;
+
+    public JogadorController(IJogadorService jogadorService, ICanalMesa canal, IValidator<MoverMinhaFichaRequestApiModel> validatorMover)
+    {
+        _jogadorService = jogadorService;
+        _canal = canal;
+        _validatorMover = validatorMover;
+    }
+
+    private static JogadorResponseApiModel ParaResponse(JogadorLogadoServiceModel jogador) => new()
+    {
+        NomePersonagem = jogador.NomePersonagem,
+        NomeCampanha = jogador.NomeCampanha,
+    };
+
+    [HttpPost("api/jogador/entrar")]
+    [AllowAnonymous]
+    [EnableRateLimiting(AutenticacaoConfig.PoliticaLogin)]
+    public async Task<ActionResult<ApiResponse<JogadorResponseApiModel>>> Entrar([FromBody] EntrarJogadorRequestApiModel request)
+    {
+        var jogador = await _jogadorService.EntrarAsync(request.Codigo ?? string.Empty);
+        await HttpContext.SignInAsync(AutenticacaoConfig.EsquemaJogador,
+            jogador.ParaPrincipalDeJogador(AutenticacaoConfig.EsquemaJogador),
+            new AuthenticationProperties { IsPersistent = true });
+        return Ok(ApiResponse<JogadorResponseApiModel>.Sucesso(ParaResponse(jogador)));
+    }
+
+    [HttpGet("api/jogador/eu")]
+    public async Task<ActionResult<ApiResponse<JogadorResponseApiModel>>> Eu()
+    {
+        var jogador = User.ObterJogador();
+        await _jogadorService.ConferirAcessoAsync(jogador);
+        return Ok(ApiResponse<JogadorResponseApiModel>.Sucesso(ParaResponse(jogador)));
+    }
+
+    [HttpPost("api/jogador/sair")]
+    public async Task<ActionResult<ApiResponse<object>>> Sair()
+    {
+        await HttpContext.SignOutAsync(AutenticacaoConfig.EsquemaJogador);
+        return Ok(ApiResponse<object>.Sucesso(null!));
+    }
+
+    /// <summary>A mesa ativa, filtrada. Sem mesa ativa, data = null (a tela mostra "aguardando o mestre").</summary>
+    [HttpGet("api/jogador/mesa")]
+    public async Task<ActionResult<ApiResponse<VisaoJogadorResponseApiModel?>>> Mesa()
+    {
+        var visao = await _jogadorService.ObterMesaAsync(User.ObterJogador());
+        return Ok(ApiResponse<VisaoJogadorResponseApiModel?>.Sucesso(visao?.ParaResponse()));
+    }
+
+    [HttpPut("api/jogador/ficha/posicao")]
+    public async Task<ActionResult<ApiResponse<object>>> Mover([FromBody] MoverMinhaFichaRequestApiModel request)
+    {
+        await _validatorMover.ValidarOuLancarAsync(request);
+        await _jogadorService.MoverMinhaFichaAsync(User.ObterJogador(), request.Coluna, request.Linha);
+        return Ok(ApiResponse<object>.Sucesso(null!));
+    }
+
+    [HttpGet("api/jogador/imagens/{id:int}")]
+    public async Task<IActionResult> Imagem(int id)
+    {
+        var (tipo, conteudo) = await _jogadorService.ObterImagemAsync(User.ObterJogador(), id);
+        Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+        return File(conteudo, tipo);
+    }
+
+    [HttpGet("api/jogador/eventos")]
+    public async Task<IResult> Eventos(CancellationToken cancelamento)
+    {
+        var jogador = User.ObterJogador();
+        await _jogadorService.ConferirAcessoAsync(jogador);
+        return EventosMesa.Fluxo(_canal, jogador.IdCampanha, cancelamento);
+    }
+}

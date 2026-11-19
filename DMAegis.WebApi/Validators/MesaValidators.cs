@@ -70,3 +70,12 @@ public class MoverParticipanteValidator : AbstractValidator<MoverParticipanteReq
             .WithMessage("A posição está fora do mapa.");
     }
 }
+
+public class MoverMinhaFichaValidator : AbstractValidator<MoverMinhaFichaRequestApiModel>
+{
+    public MoverMinhaFichaValidator()
+    {
+        RuleFor(x => x.Coluna).InclusiveBetween(0, RegrasMesaApi.PosicaoMaxima).WithMessage("A posição está fora do mapa.");
+        RuleFor(x => x.Linha).InclusiveBetween(0, RegrasMesaApi.PosicaoMaxima).WithMessage("A posição está fora do mapa.");
+    }
+}

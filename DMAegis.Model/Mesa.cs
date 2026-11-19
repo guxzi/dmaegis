@@ -27,6 +27,9 @@ public class Mesa
     /// <summary>st_grade_visivel</summary>
     public bool GradeVisivel { get; set; } = true;
 
+    /// <summary>st_movimento_livre (os jogadores podem mover a própria ficha)</summary>
+    public bool MovimentoLivre { get; set; } = true;
+
     /// <summary>st_ativa (a que os jogadores veem; no máximo uma por campanha)</summary>
     public bool Ativa { get; set; }
 

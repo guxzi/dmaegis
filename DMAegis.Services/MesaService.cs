@@ -44,6 +44,7 @@ public class MesaServiceModel
     public int DeslocamentoX { get; set; }
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
+    public bool MovimentoLivre { get; set; }
     public bool Ativa { get; set; }
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
@@ -61,6 +62,7 @@ public class SalvarMesaServiceModel
     public int DeslocamentoX { get; set; }
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; } = true;
+    public bool MovimentoLivre { get; set; } = true;
 }
 
 public class InserirParticipantesServiceModel
@@ -122,6 +124,7 @@ public class VisaoJogadorServiceModel
     public int DeslocamentoX { get; set; }
     public int DeslocamentoY { get; set; }
     public bool GradeVisivel { get; set; }
+    public bool MovimentoLivre { get; set; }
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
     public int? IdParticipanteVez { get; set; }
@@ -147,6 +150,12 @@ public interface IMesaService
     Task<MesaServiceModel> EncerrarCombateAsync(int idUsuario, int idMesa);
 
     Task<VisaoJogadorServiceModel> ObterVisaoJogadorAsync(int idUsuario, int idMesa);
+
+    /// <summary>
+    /// Estado completo da mesa ativa da campanha, sem conferir dono: só para o JogadorService,
+    /// que já conferiu o convite e sempre filtra com FiltrarParaJogador antes de responder.
+    /// </summary>
+    Task<MesaServiceModel?> MontarAtivaAsync(int idCampanha);
 }
 
 public class MesaService : IMesaService
@@ -161,6 +170,7 @@ public class MesaService : IMesaService
     private readonly IAtributoRegistroRepository _atributoRepository;
     private readonly IImagemRegistroRepository _imagemRepository;
     private readonly ICampanhaService _campanhaService;
+    private readonly ICanalMesa _canal;
 
     public MesaService(
         IMesaRepository mesaRepository,
@@ -169,7 +179,8 @@ public class MesaService : IMesaService
         IRegistroRepository registroRepository,
         IAtributoRegistroRepository atributoRepository,
         IImagemRegistroRepository imagemRepository,
-        ICampanhaService campanhaService)
+        ICampanhaService campanhaService,
+        ICanalMesa canal)
     {
         _mesaRepository = mesaRepository;
         _participanteRepository = participanteRepository;
@@ -178,6 +189,7 @@ public class MesaService : IMesaService
         _atributoRepository = atributoRepository;
         _imagemRepository = imagemRepository;
         _campanhaService = campanhaService;
+        _canal = canal;
     }
 
     // ---------- Mesas ----------
@@ -213,12 +225,13 @@ public class MesaService : IMesaService
             DeslocamentoX = dados.DeslocamentoX,
             DeslocamentoY = dados.DeslocamentoY,
             GradeVisivel = dados.GradeVisivel,
+            MovimentoLivre = dados.MovimentoLivre,
             Ativa = primeira,
             DataCriacao = agora,
             DataAtualizacao = agora,
         };
         mesa.Id = await _mesaRepository.InserirAsync(mesa);
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     public async Task<MesaServiceModel> AtualizarAsync(int idUsuario, int id, SalvarMesaServiceModel dados)
@@ -232,15 +245,17 @@ public class MesaService : IMesaService
         mesa.DeslocamentoX = dados.DeslocamentoX;
         mesa.DeslocamentoY = dados.DeslocamentoY;
         mesa.GradeVisivel = dados.GradeVisivel;
+        mesa.MovimentoLivre = dados.MovimentoLivre;
         mesa.DataAtualizacao = Agora();
         await _mesaRepository.AtualizarAsync(mesa);
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     public async Task ExcluirAsync(int idUsuario, int id)
     {
-        await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id);
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id);
         await _mesaRepository.ExcluirAsync(id);
+        _canal.Avisar(mesa.IdCampanha);
     }
 
     public async Task<MesaServiceModel> AtivarAsync(int idUsuario, int id)
@@ -248,7 +263,7 @@ public class MesaService : IMesaService
         var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id);
         await _mesaRepository.DefinirAtivaAsync(mesa.IdCampanha, mesa.Id);
         mesa.Ativa = true;
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     // ---------- Participantes ----------
@@ -275,7 +290,7 @@ public class MesaService : IMesaService
             }
             transacao.Complete();
         }
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     public async Task<MesaServiceModel> AtualizarParticipanteAsync(int idUsuario, int id, SalvarParticipanteServiceModel dados)
@@ -306,22 +321,24 @@ public class MesaService : IMesaService
             await _condicaoRepository.SubstituirAsync(participante.Id, condicoes);
             transacao.Complete();
         }
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     public async Task MoverParticipanteAsync(int idUsuario, int id, int? coluna, int? linha)
     {
-        await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
+        var (_, mesa) = await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
         // Só fora do mapa quando os dois são nulos; meio a meio não existe.
         if (coluna is null || linha is null)
             (coluna, linha) = (null, null);
         await _participanteRepository.AtualizarPosicaoAsync(id, coluna, linha);
+        _canal.Avisar(mesa.IdCampanha);
     }
 
     public async Task<MesaServiceModel> ExcluirParticipanteAsync(int idUsuario, int id)
     {
         var (_, mesa) = await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
         await _participanteRepository.ExcluirAsync(id);
+        _canal.Avisar(mesa.IdCampanha);
         // Se era a vez dele, o banco limpa a vez (SET NULL); a mesa é lida de novo para refletir isso.
         return await ObterAsync(idUsuario, mesa.Id);
     }
@@ -348,20 +365,20 @@ public class MesaService : IMesaService
             (mesa.EmCombate, mesa.Rodada, mesa.IdParticipanteVez) = (true, 1, vez);
             transacao.Complete();
         }
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     public async Task<MesaServiceModel> ProximoTurnoAsync(int idUsuario, int idMesa)
     {
         var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
         if (!mesa.EmCombate)
-            return await MontarAsync(mesa);
+            return await AvisarEMontarAsync(mesa);
 
         var ordem = RegrasMesa.OrdenarIniciativa(await _participanteRepository.ListarPorMesaAsync(idMesa));
         var (vez, rodada) = RegrasMesa.ProximaVez(ordem, mesa.IdParticipanteVez, Math.Max(mesa.Rodada, 1));
         await _mesaRepository.AtualizarCombateAsync(idMesa, true, rodada, vez);
         (mesa.Rodada, mesa.IdParticipanteVez) = (rodada, vez);
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     public async Task<MesaServiceModel> EncerrarCombateAsync(int idUsuario, int idMesa)
@@ -369,7 +386,7 @@ public class MesaService : IMesaService
         var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
         await _mesaRepository.AtualizarCombateAsync(idMesa, false, 0, null);
         (mesa.EmCombate, mesa.Rodada, mesa.IdParticipanteVez) = (false, 0, null);
-        return await MontarAsync(mesa);
+        return await AvisarEMontarAsync(mesa);
     }
 
     // ---------- Visão dos jogadores ----------
@@ -393,6 +410,7 @@ public class MesaService : IMesaService
             DeslocamentoX = mesa.DeslocamentoX,
             DeslocamentoY = mesa.DeslocamentoY,
             GradeVisivel = mesa.GradeVisivel,
+            MovimentoLivre = mesa.MovimentoLivre,
             EmCombate = mesa.EmCombate,
             Rodada = mesa.Rodada,
             IdParticipanteVez = visiveis.Any(p => p.Id == mesa.IdParticipanteVez) ? mesa.IdParticipanteVez : null,
@@ -475,7 +493,21 @@ public class MesaService : IMesaService
         };
     }
 
-    private async Task<MesaServiceModel> MontarAsync(Mesa mesa)
+    public async Task<MesaServiceModel?> MontarAtivaAsync(int idCampanha)
+    {
+        var mesa = await _mesaRepository.ObterAtivaAsync(idCampanha);
+        return mesa is null ? null : await MontarAsync(mesa);
+    }
+
+    /// <summary>Depois de gravar: avisa as telas abertas e devolve a mesa montada.</summary>
+    private async Task<MesaServiceModel> AvisarEMontarAsync(Mesa mesa)
+    {
+        _canal.Avisar(mesa.IdCampanha);
+        return await MontarAsync(mesa);
+    }
+
+    /// <summary>Monta o estado completo da mesa (para o mestre). Também usado pela visão do jogador.</summary>
+    public async Task<MesaServiceModel> MontarAsync(Mesa mesa)
     {
         var participantes = await _participanteRepository.ListarPorMesaAsync(mesa.Id);
         var condicoes = (await _condicaoRepository.ListarPorMesaAsync(mesa.Id))
@@ -497,6 +529,7 @@ public class MesaService : IMesaService
             DeslocamentoX = mesa.DeslocamentoX,
             DeslocamentoY = mesa.DeslocamentoY,
             GradeVisivel = mesa.GradeVisivel,
+            MovimentoLivre = mesa.MovimentoLivre,
             Ativa = mesa.Ativa,
             EmCombate = mesa.EmCombate,
             Rodada = mesa.Rodada,

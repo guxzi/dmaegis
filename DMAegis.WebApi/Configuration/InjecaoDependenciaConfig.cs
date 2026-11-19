@@ -34,6 +34,7 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<IMesaRepository, MesaRepository>();
         services.AddScoped<IParticipanteMesaRepository, ParticipanteMesaRepository>();
         services.AddScoped<ICondicaoParticipanteRepository, CondicaoParticipanteRepository>();
+        services.AddScoped<IConviteJogadorRepository, ConviteJogadorRepository>();
 
         // Services
         services.AddScoped<ISaudeService, SaudeService>();
@@ -43,6 +44,8 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<ISessaoService, SessaoService>();
         services.AddScoped<IImagemService, ImagemService>();
         services.AddScoped<IMesaService, MesaService>();
+        services.AddScoped<IJogadorService, JogadorService>();
+        services.AddSingleton<ICanalMesa, CanalMesa>();
 
         // Validators (todos os AbstractValidator deste projeto)
         services.AddValidatorsFromAssemblyContaining<LoginValidator>();

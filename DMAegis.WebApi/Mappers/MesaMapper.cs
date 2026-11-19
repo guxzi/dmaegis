@@ -13,6 +13,7 @@ public static class MesaMapper
         DeslocamentoX = request.DeslocamentoX,
         DeslocamentoY = request.DeslocamentoY,
         GradeVisivel = request.GradeVisivel,
+        MovimentoLivre = request.MovimentoLivre,
     };
 
     public static InserirParticipantesServiceModel ParaServiceModel(this InserirParticipantesRequestApiModel request) => new()
@@ -61,6 +62,7 @@ public static class MesaMapper
         DeslocamentoX = mesa.DeslocamentoX,
         DeslocamentoY = mesa.DeslocamentoY,
         GradeVisivel = mesa.GradeVisivel,
+        MovimentoLivre = mesa.MovimentoLivre,
         Ativa = mesa.Ativa,
         EmCombate = mesa.EmCombate,
         Rodada = mesa.Rodada,
@@ -96,6 +98,7 @@ public static class MesaMapper
         DeslocamentoX = visao.DeslocamentoX,
         DeslocamentoY = visao.DeslocamentoY,
         GradeVisivel = visao.GradeVisivel,
+        MovimentoLivre = visao.MovimentoLivre,
         EmCombate = visao.EmCombate,
         Rodada = visao.Rodada,
         IdParticipanteVez = visao.IdParticipanteVez,

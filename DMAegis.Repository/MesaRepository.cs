@@ -32,6 +32,7 @@ public class MesaRepository : RepositoryBase, IMesaRepository
         nu_deslocamento_x   AS DeslocamentoX,
         nu_deslocamento_y   AS DeslocamentoY,
         st_grade_visivel    AS GradeVisivel,
+        st_movimento_livre  AS MovimentoLivre,
         st_ativa            AS Ativa,
         st_combate          AS EmCombate,
         nu_rodada           AS Rodada,
@@ -70,9 +71,10 @@ public class MesaRepository : RepositoryBase, IMesaRepository
         await using var conexao = ConexaoFactory.Criar();
         return await conexao.ExecuteScalarAsync<int>("""
             INSERT INTO tb_mesa (co_campanha, no_mesa, co_imagem_registro, nu_tamanho_celula, nu_deslocamento_x,
-                                 nu_deslocamento_y, st_grade_visivel, st_ativa, st_combate, nu_rodada, dt_criacao, dt_atualizacao)
+                                 nu_deslocamento_y, st_grade_visivel, st_movimento_livre, st_ativa, st_combate, nu_rodada,
+                                 dt_criacao, dt_atualizacao)
             VALUES (@IdCampanha, @Nome, @IdImagemRegistro, @TamanhoCelula, @DeslocamentoX,
-                    @DeslocamentoY, @GradeVisivel, @Ativa, 0, 0, @DataCriacao, @DataAtualizacao);
+                    @DeslocamentoY, @GradeVisivel, @MovimentoLivre, @Ativa, 0, 0, @DataCriacao, @DataAtualizacao);
             SELECT LAST_INSERT_ID();
             """, mesa);
     }
@@ -84,7 +86,7 @@ public class MesaRepository : RepositoryBase, IMesaRepository
             UPDATE tb_mesa
                SET no_mesa = @Nome, co_imagem_registro = @IdImagemRegistro, nu_tamanho_celula = @TamanhoCelula,
                    nu_deslocamento_x = @DeslocamentoX, nu_deslocamento_y = @DeslocamentoY,
-                   st_grade_visivel = @GradeVisivel, dt_atualizacao = @DataAtualizacao
+                   st_grade_visivel = @GradeVisivel, st_movimento_livre = @MovimentoLivre, dt_atualizacao = @DataAtualizacao
              WHERE co_seq_mesa = @Id
             """, mesa);
     }

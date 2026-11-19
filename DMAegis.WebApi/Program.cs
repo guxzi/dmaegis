@@ -2,7 +2,9 @@ using DMAegis.Services.Exceptions;
 using DMAegis.WebApi.ApiModels;
 using DMAegis.WebApi.Configuration;
 using DMAegis.WebApi.Middlewares;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 
 // Carrega o .env da raiz do repositório (procura nas pastas acima do projeto).
 DotNetEnv.Env.TraversePath().Load();
@@ -24,6 +26,13 @@ InjecaoDependenciaConfig.Registrar(builder.Services);
 
 var app = builder.Build();
 
+// Atrás do túnel (cloudflared no próprio PC), a API enxerga o https e o IP de quem acessa.
+// Só confia nesses cabeçalhos vindos do loopback (o padrão do ASP.NET Core).
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+});
+
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -37,6 +46,26 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Modo mesa (túnel): a API também serve o site compilado, para o túnel apontar para uma origem só.
+// Liga com DMAEGIS_SERVIR_SITE=1 (o "Abrir mesa para os jogadores.cmd" faz isso).
+if (Environment.GetEnvironmentVariable("DMAEGIS_SERVIR_SITE") == "1")
+{
+    var pastaSite = Path.GetFullPath(Environment.GetEnvironmentVariable("DMAEGIS_SITE")
+                                     ?? Path.Combine(app.Environment.ContentRootPath, "..", "dmaegis.web", "dist"));
+    if (Directory.Exists(pastaSite))
+    {
+        var arquivos = new PhysicalFileProvider(pastaSite);
+        app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = arquivos });
+        app.UseStaticFiles(new StaticFileOptions { FileProvider = arquivos });
+        // Rotas do React (/jogar, /convite/…) voltam o index.html; as da API continuam com 404 no envelope.
+        app.MapFallbackToFile("{*caminho:regex(^(?!api/).*$)}", "index.html", new StaticFileOptions { FileProvider = arquivos });
+    }
+    else
+    {
+        app.Logger.LogWarning("DMAEGIS_SERVIR_SITE=1, mas a pasta do site não existe: {Pasta}. Rode npm run build.", pastaSite);
+    }
+}
 
 app.Run();
 

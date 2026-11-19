@@ -14,6 +14,10 @@ public static class AutenticacaoConfig
     public const string CabecalhoCsrf = "X-XSRF-TOKEN";
     public const string PoliticaLogin = "login";
 
+    /// <summary>Segundo esquema: o cookie dos jogadores que entram pelo link de convite. Só abre /api/jogador/*.</summary>
+    public const string EsquemaJogador = "Jogador";
+    public const string NomeCookieJogador = "dmaegis.jogador";
+
     public const string MensagemNaoAutenticado = "Faça login para continuar.";
     public const string MensagemAcessoNegado = "Você não tem acesso a este recurso.";
     public const string MensagemMuitasTentativas = "Muitas tentativas. Aguarde um minuto e tente de novo.";
@@ -36,6 +40,21 @@ public static class AutenticacaoConfig
                 // API: em vez de redirecionar para uma página de login, responde 401/403 com o envelope.
                 opcoes.Events.OnRedirectToLogin = contexto =>
                     EscreverErroAsync(contexto.HttpContext, StatusCodes.Status401Unauthorized, MensagemNaoAutenticado);
+                opcoes.Events.OnRedirectToAccessDenied = contexto =>
+                    EscreverErroAsync(contexto.HttpContext, StatusCodes.Status403Forbidden, MensagemAcessoNegado);
+            })
+            .AddCookie(EsquemaJogador, opcoes =>
+            {
+                opcoes.Cookie.Name = NomeCookieJogador;
+                opcoes.Cookie.HttpOnly = true;
+                opcoes.Cookie.SameSite = SameSiteMode.Strict;
+                opcoes.Cookie.SecurePolicy = ambiente.IsDevelopment()
+                    ? CookieSecurePolicy.SameAsRequest
+                    : CookieSecurePolicy.Always;
+                opcoes.ExpireTimeSpan = TimeSpan.FromDays(30);
+                opcoes.SlidingExpiration = true;
+                opcoes.Events.OnRedirectToLogin = contexto =>
+                    EscreverErroAsync(contexto.HttpContext, StatusCodes.Status401Unauthorized, "Abra o link de convite que o mestre mandou.");
                 opcoes.Events.OnRedirectToAccessDenied = contexto =>
                     EscreverErroAsync(contexto.HttpContext, StatusCodes.Status403Forbidden, MensagemAcessoNegado);
             });

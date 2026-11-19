@@ -25,4 +25,9 @@ public static class BusinessErrors
     public static readonly (int Code, string DefaultMessage) MesaNaoEncontrada = (17, "Mesa não encontrada.");
     public static readonly (int Code, string DefaultMessage) ParticipanteNaoEncontrado = (18, "Ficha não encontrada.");
     public static readonly (int Code, string DefaultMessage) LimiteParticipantes = (19, "Uma mesa pode ter até 60 fichas.");
+    public static readonly (int Code, string DefaultMessage) ConviteInvalido = (20, "Este link de convite não vale mais. Peça o novo ao mestre.");
+    public static readonly (int Code, string DefaultMessage) AcessoJogadorExpirado = (21, "O mestre trocou o seu link. Peça o novo para voltar à mesa.");
+    public static readonly (int Code, string DefaultMessage) MovimentoBloqueado = (22, "O mestre travou o movimento das fichas.");
+    public static readonly (int Code, string DefaultMessage) FichaForaDaMesa = (23, "Sua ficha não está no mapa agora.");
+    public static readonly (int Code, string DefaultMessage) SoJogadorTemConvite = (24, "Só personagens de jogador (PJ) recebem link.");
 }
