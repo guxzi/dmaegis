@@ -22,7 +22,7 @@ O preparo de sessão segue os 8 passos do *Lazy DM* (começo forte, cenas, segre
 
 Durante o jogo, o escudo mostra a cena atual, os segredos revelados e quem está em cena. Nas anotações, o nome de um registro vira um botão que abre o cartão dele. Tem rolador de dados (`2d20kh1+5`, `4d6kl3`…), busca rápida com Ctrl+K e uma aba de regras do sistema da mesa.
 
-A mesa virtual coloca um mapa da galeria com grade, fichas redondas com retrato (ou a inicial, enquanto o personagem não tem imagem) e o combate ao lado: iniciativa, turno e rodada, dano e cura, condições e fichas escondidas. Com o pincel da névoa de guerra eu revelo o mapa aos poucos.
+A mesa virtual coloca um mapa da galeria com grade, fichas redondas com retrato (ou a inicial, enquanto o personagem não tem imagem) e o combate ao lado: iniciativa, turno e rodada, dano e cura, condições e fichas escondidas. Com o pincel da névoa de guerra eu revelo o mapa aos poucos, e a régua (tecla R) mede a distância em quadrados e metros.
 
 Cada jogador recebe um link, abre a mesa no navegador e move a própria ficha, tudo em tempo real. Ele só vê o que deve: PV de monstro, ficha escondida, monstro na névoa, anotações e segredos ficam comigo. Também dá para mandar qualquer imagem para uma janela de projeção, copiar ou baixar.
 
@@ -43,7 +43,7 @@ A API é dividida em Controller, Service e Repository, e sempre responde com o e
 
 Precisa do [.NET 10 SDK](https://dotnet.microsoft.com/download), do [Node.js](https://nodejs.org) e do MySQL 8.
 
-1. Rode os scripts de `database/` em ordem, do `01` ao `08`. O `04` cria um usuário de teste: `mestre@dmaegis.test`, senha `dmaegis-teste`.
+1. Rode os scripts de `database/` em ordem, do `01` ao `09`. O `04` cria um usuário de teste: `mestre@dmaegis.test`, senha `dmaegis-teste`.
 2. Copie o `.env.example` para `.env` na raiz e troque `SUA_SENHA` pela senha do seu MySQL. O `.env` não vai para o git.
 3. Instale as dependências do site:
 

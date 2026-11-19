@@ -52,3 +52,18 @@ export function celulaLivrePerto(coluna, linha, ocupadas, limite = 12) {
   }
   return { coluna, linha };
 }
+
+// Distância entre duas células para a régua. Nas regras de 2024, cada quadrado conta 1,5 m, inclusive na diagonal,
+// então a distância é o maior dos dois deslocamentos (colunas ou linhas).
+export const METROS_POR_QUADRADO = 1.5;
+
+export function distanciaNaGrade(a, b) {
+  const quadrados = Math.max(Math.abs(b.coluna - a.coluna), Math.abs(b.linha - a.linha));
+  return { quadrados, metros: quadrados * METROS_POR_QUADRADO };
+}
+
+// Texto da régua: "4 quadrados · 6 m" (com vírgula decimal).
+export function textoDaDistancia({ quadrados, metros }) {
+  const m = Number.isInteger(metros) ? String(metros) : metros.toFixed(1).replace('.', ',');
+  return `${quadrados} ${quadrados === 1 ? 'quadrado' : 'quadrados'} · ${m} m`;
+}

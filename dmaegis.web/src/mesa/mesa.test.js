@@ -94,3 +94,12 @@ test('o link de convite usa o endereço da mesa sem barra sobrando', async () =>
   expect(linkDeConvite('https://abc.trycloudflare.com/', 'x_y-1')).toBe('https://abc.trycloudflare.com/convite/x_y-1');
   expect(linkDeConvite(' http://localhost:5080 ', 'c')).toBe('http://localhost:5080/convite/c');
 });
+
+test('a régua conta quadrados como nas regras de 2024 (diagonal vale 1) e converte para metros', async () => {
+  const { distanciaNaGrade, textoDaDistancia } = await import('./grade.js');
+  expect(distanciaNaGrade({ coluna: 1, linha: 1 }, { coluna: 5, linha: 2 })).toEqual({ quadrados: 4, metros: 6 });
+  expect(distanciaNaGrade({ coluna: 3, linha: 3 }, { coluna: 0, linha: 0 })).toEqual({ quadrados: 3, metros: 4.5 });
+  expect(textoDaDistancia({ quadrados: 3, metros: 4.5 })).toBe('3 quadrados · 4,5 m');
+  expect(textoDaDistancia({ quadrados: 1, metros: 1.5 })).toBe('1 quadrado · 1,5 m');
+  expect(textoDaDistancia({ quadrados: 4, metros: 6 })).toBe('4 quadrados · 6 m');
+});

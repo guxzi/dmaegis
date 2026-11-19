@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { COR_TIPO } from '../caderno/tipos.js';
 import { CLASSE_SAUDE, estadoSaude, fracaoPv } from './combate.js';
 import CamadaNevoa from './CamadaNevoa.jsx';
-import { celulaDoPonto, enquadrar, pontoDaCelula, zoomNoPonto } from './grade.js';
+import { celulaDoPonto, distanciaNaGrade, enquadrar, pontoDaCelula, textoDaDistancia, zoomNoPonto } from './grade.js';
 import {
   caminhoEntre, celulasDoPincel, celulasDoRetangulo, conjuntoDe, diferenca, limitesDaGrade, pintar,
 } from './nevoa.js';
@@ -74,6 +74,10 @@ export default function PalcoMapa({
   // Enquanto o mestre pinta, a névoa mostra a prévia (conjunto de células reveladas) até soltar o mouse.
   const [pintura, setPintura] = useState(null);
   const [celulaSobCursor, setCelulaSobCursor] = useState(null);
+  // Régua: liga no botão ou na tecla R; arrastar mede de uma célula a outra. É só local (cada um na sua tela).
+  const [regua, setRegua] = useState(false);
+  const [medida, setMedida] = useState(null);
+  const apagarMedida = useRef(null);
 
   // Só vale o tamanho da imagem que está na mesa agora (ao trocar o mapa, espera a nova carregar).
   const tamanhoImagem = imagemCarregada?.id === mesa.idImagemRegistro ? imagemCarregada : null;
@@ -141,6 +145,22 @@ export default function PalcoMapa({
     return () => palco.removeEventListener('wheel', aoRolar);
   }, []);
 
+  // Tecla R liga e desliga a régua (fora dos campos de texto).
+  useEffect(() => {
+    function aoTeclar(evento) {
+      if (evento.target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      if ((evento.key === 'r' || evento.key === 'R') && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
+        setRegua((r) => !r);
+        setMedida(null);
+      }
+    }
+    window.addEventListener('keydown', aoTeclar);
+    return () => {
+      window.removeEventListener('keydown', aoTeclar);
+      clearTimeout(apagarMedida.current);
+    };
+  }, []);
+
   function pontoNoMapa(evento) {
     const caixa = palcoRef.current.getBoundingClientRect();
     return {
@@ -156,6 +176,14 @@ export default function PalcoMapa({
 
   function apertarFundo(evento) {
     if (evento.button !== 0) return;
+    if (regua && !pincel) {
+      const celula = celulaDoEvento(evento);
+      clearTimeout(apagarMedida.current);
+      gesto.current = { tipo: 'medir', inicio: celula };
+      setMedida({ a: celula, b: celula });
+      evento.currentTarget.setPointerCapture(evento.pointerId);
+      return;
+    }
     if (pincel) {
       // Pintar a névoa: guarda o conjunto de antes para mandar só a diferença ao soltar.
       const celula = celulaDoEvento(evento);
@@ -186,6 +214,10 @@ export default function PalcoMapa({
     if (pincel) setCelulaSobCursor(celulaDoEvento(evento));
     const g = gesto.current;
     if (!g) return;
+    if (g.tipo === 'medir') {
+      setMedida({ a: g.inicio, b: celulaDoEvento(evento) });
+      return;
+    }
     if (g.tipo === 'pintar') {
       const celula = celulaDoEvento(evento);
       if (celula.coluna === g.ultima.coluna && celula.linha === g.ultima.linha) return;
@@ -215,6 +247,11 @@ export default function PalcoMapa({
     const g = gesto.current;
     gesto.current = null;
     if (!g) return;
+    if (g.tipo === 'medir') {
+      // A medida fica na tela por um instante depois de soltar.
+      apagarMedida.current = setTimeout(() => setMedida(null), 2500);
+      return;
+    }
     if (g.tipo === 'pintar') {
       const final = pintura?.atual ?? g.antes;
       const mudancas = diferenca(g.antes, final);
@@ -254,7 +291,7 @@ export default function PalcoMapa({
   })();
 
   return (
-    <div className={`palco-mapa palco-${modo}${arrasto ? ' arrastando' : ''}${pincel ? ' palco-pintando' : ''}`} ref={palcoRef}
+    <div className={`palco-mapa palco-${modo}${arrasto ? ' arrastando' : ''}${pincel ? ' palco-pintando' : ''}${regua && !pincel ? ' palco-medindo' : ''}`} ref={palcoRef}
       onPointerDown={apertarFundo} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
       onPointerLeave={() => setCelulaSobCursor(null)}>
       <div className="palco-conteudo"
@@ -307,6 +344,26 @@ export default function PalcoMapa({
           );
         })()}
 
+        {medida && (() => {
+          const meio = mesa.tamanhoCelula / 2;
+          const a = pontoDaCelula(medida.a.coluna, medida.a.linha, mesa);
+          const b = pontoDaCelula(medida.b.coluna, medida.b.linha, mesa);
+          const distancia = distanciaNaGrade(medida.a, medida.b);
+          return (
+            <>
+              <svg className="regua-linha" width={largura} height={altura} aria-hidden="true">
+                <line x1={a.x + meio} y1={a.y + meio} x2={b.x + meio} y2={b.y + meio} />
+                <circle cx={a.x + meio} cy={a.y + meio} r={mesa.tamanhoCelula * 0.12} />
+                <circle cx={b.x + meio} cy={b.y + meio} r={mesa.tamanhoCelula * 0.16} />
+              </svg>
+              <div className="regua-rotulo" role="status"
+                style={{ transform: `translate(${b.x + meio}px, ${b.y - meio * 0.3}px) translate(-50%, -100%) scale(${1 / vista.escala})` }}>
+                {textoDaDistancia(distancia)}
+              </div>
+            </>
+          );
+        })()}
+
         {destino && (
           <div className="palco-destino" style={{ width: destino.lado, height: destino.lado, transform: `translate(${destino.x}px, ${destino.y}px)` }} />
         )}
@@ -327,6 +384,13 @@ export default function PalcoMapa({
         <button type="button" onClick={() => zoomBotao(1 / 1.25)} aria-label="Afastar">−</button>
         <button type="button" onClick={centralizar} title="Enquadrar o mapa">{Math.round(vista.escala * 100)}%</button>
         <button type="button" onClick={() => zoomBotao(1.25)} aria-label="Aproximar">+</button>
+        <button type="button" className="botao-regua" aria-pressed={regua} title="Régua (tecla R): arraste para medir"
+          onClick={() => { setRegua((r) => !r); setMedida(null); }} aria-label="Régua">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M3 17 17 3l4 4L7 21z" />
+            <path d="M7 13l2 2M10 10l2 2M13 7l2 2" />
+          </svg>
+        </button>
       </div>
       {children}
     </div>
