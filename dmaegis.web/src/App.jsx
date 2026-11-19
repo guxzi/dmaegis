@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { RotaProtegida, RotaPublica } from './auth/RotaProtegida.jsx';
 import CeuEstrelado from './componentes/CeuEstrelado.jsx';
+import FaiscaClique from './componentes/FaiscaClique.jsx';
 import Caderno from './paginas/Caderno.jsx';
 import CampanhaDetalhe from './paginas/CampanhaDetalhe.jsx';
 import Campanhas from './paginas/Campanhas.jsx';
@@ -20,6 +21,7 @@ export default function App() {
   return (
     <>
       <CeuEstrelado />
+      <FaiscaClique />
       <Routes>
         <Route path="/entrar" element={<RotaPublica><Entrar /></RotaPublica>} />
         <Route path="/cadastro" element={<RotaPublica><Cadastro /></RotaPublica>} />

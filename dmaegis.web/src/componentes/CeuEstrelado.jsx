@@ -1,3 +1,5 @@
+import { useLocation } from 'react-router';
+
 // Fundo fixo de todas as páginas: névoa cobalto/violeta, três camadas de estrelas
 // e constelações discretas com uma órbita que gira devagar (parada se o sistema pedir menos movimento).
 function Constelacao({ className, comOrbita = false }) {
@@ -26,12 +28,17 @@ function Constelacao({ className, comOrbita = false }) {
   );
 }
 
+// A cada troca de página as camadas de estrelas remontam (key) e deslizam em velocidades diferentes,
+// como se a câmera viajasse pelo céu. As constelações ficam de fora para a órbita não reiniciar.
 export default function CeuEstrelado() {
+  const { pathname } = useLocation();
   return (
     <div className="ceu-estrelado" aria-hidden="true">
-      <div className="estrelas estrelas-pequenas" />
-      <div className="estrelas estrelas-medias" />
-      <div className="estrelas estrelas-grandes" />
+      <div className="ceu-viagem" key={pathname}>
+        <div className="estrelas estrelas-pequenas" />
+        <div className="estrelas estrelas-medias" />
+        <div className="estrelas estrelas-grandes" />
+      </div>
       <Constelacao className="constelacao-alto" />
       <Constelacao className="constelacao" comOrbita />
     </div>

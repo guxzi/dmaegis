@@ -33,7 +33,7 @@ export default function VisualizadorImagem({ imagens, indice, aoMudar, aoFechar 
     <div className="visualizador-imagem" role="dialog" aria-modal="true" aria-label={imagem.titulo}>
       <div className="visualizador-palco" style={{ overflow: tamanhoReal ? 'auto' : 'hidden' }}
         onClick={(e) => e.target === e.currentTarget && aoFechar()}>
-        <img src={urlDaImagem(imagem.id)} alt={imagem.titulo}
+        <img key={imagem.id} src={urlDaImagem(imagem.id)} alt={imagem.titulo}
           className={tamanhoReal ? 'tamanho-real' : 'ajustada'}
           onClick={() => setTamanhoReal((v) => !v)}
           title={tamanhoReal ? 'Clique para ajustar à tela' : 'Clique para ver no tamanho real'} />

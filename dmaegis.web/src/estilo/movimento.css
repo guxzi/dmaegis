@@ -1,0 +1,156 @@
+/*
+ * DMAegis — movimento (18/11/2026)
+ * Transições entre páginas e cliques, no ritmo do céu estrelado.
+ * Tudo fica dentro de `prefers-reduced-motion: no-preference`: quem pede menos movimento vê a tela parada.
+ * As animações de entrada usam `backwards` (e não `both`) para não deixar transform sobrando,
+ * o que prenderia modais e painéis fixos dentro da página.
+ */
+
+/* Esqueleto da viagem pelo céu: as camadas sobram para cima e para baixo para não abrir buraco ao deslizar. */
+.ceu-viagem { position: absolute; inset: 0; }
+.ceu-viagem .estrelas { top: -72px; bottom: -72px; }
+
+/* Faísca do clique (FaiscaClique.jsx): um anel e seis raios saindo do ponto clicado. */
+.faisca { position: fixed; width: 0; height: 0; pointer-events: none; z-index: 2000; }
+.faisca-anel,
+.faisca-raio { position: absolute; border-radius: 50%; }
+.faisca-anel {
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--dm-estrela);
+  box-shadow: 0 0 12px rgba(var(--dm-violeta-rgb), 0.8), inset 0 0 8px rgba(var(--dm-cobalto-rgb), 0.6);
+  animation: faisca-anel 0.55s var(--dm-ease) forwards;
+}
+.faisca-raio {
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  box-shadow: 0 0 6px 1px var(--dm-estrela);
+  animation: faisca-raio 0.6s var(--dm-ease) forwards;
+}
+@keyframes faisca-anel {
+  from { transform: scale(0.2); opacity: 0.95; }
+  to { transform: scale(1.7); opacity: 0; }
+}
+@keyframes faisca-raio {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to { transform: translate(var(--x), var(--y)) scale(0.3); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+
+  /* ---------- Céu: a cada página as estrelas deslizam, as de perto mais rápido (paralaxe) ---------- */
+  .ceu-estrelado .ceu-viagem .estrelas-pequenas { animation: viagem-longe 1.4s var(--dm-ease) backwards; }
+  .ceu-estrelado .ceu-viagem .estrelas-medias {
+    animation: viagem-meio 1.4s var(--dm-ease) backwards, cintilar 6s ease-in-out infinite alternate;
+  }
+  .ceu-estrelado .ceu-viagem .estrelas-grandes {
+    animation: viagem-perto 1.4s var(--dm-ease) backwards, cintilar 9s ease-in-out infinite alternate-reverse;
+  }
+
+  /* ---------- Página: cada rota monta um <main> novo, que sobe saindo da névoa ---------- */
+  main { animation: entrar-pagina 0.5s var(--dm-ease) backwards; }
+  .projecao { animation-duration: 0.9s; }
+
+  /* Grades de cartões entram em sequência (até a 9.ª; as outras juntas). */
+  main [class*="row-cols-"] > *,
+  .galeria-campanha > *,
+  .grupo-galeria { animation: surgir 0.5s var(--dm-ease) backwards; }
+  main [class*="row-cols-"] > :nth-child(2), .galeria-campanha > :nth-child(2), .grupo-galeria:nth-child(2) { animation-delay: 0.04s; }
+  main [class*="row-cols-"] > :nth-child(3), .galeria-campanha > :nth-child(3), .grupo-galeria:nth-child(3) { animation-delay: 0.08s; }
+  main [class*="row-cols-"] > :nth-child(4), .galeria-campanha > :nth-child(4), .grupo-galeria:nth-child(4) { animation-delay: 0.12s; }
+  main [class*="row-cols-"] > :nth-child(5), .galeria-campanha > :nth-child(5), .grupo-galeria:nth-child(5) { animation-delay: 0.16s; }
+  main [class*="row-cols-"] > :nth-child(6), .galeria-campanha > :nth-child(6), .grupo-galeria:nth-child(6) { animation-delay: 0.2s; }
+  main [class*="row-cols-"] > :nth-child(7), .galeria-campanha > :nth-child(7), .grupo-galeria:nth-child(7) { animation-delay: 0.24s; }
+  main [class*="row-cols-"] > :nth-child(8), .galeria-campanha > :nth-child(8), .grupo-galeria:nth-child(8) { animation-delay: 0.28s; }
+  main [class*="row-cols-"] > :nth-child(n+9), .galeria-campanha > :nth-child(n+9), .grupo-galeria:nth-child(n+9) { animation-delay: 0.32s; }
+
+  /* Menu da campanha: o traço de luz cresce sob a página escolhida. */
+  .nav-campanha a { transition: color 0.25s; }
+  .nav-campanha a.active::after { animation: risco-estelar 0.45s var(--dm-ease) backwards; }
+
+  /* ---------- Cliques: tudo que é clicável afunda um pouco ao ser pressionado ---------- */
+  .btn:active:not(:disabled):not(.disabled) { transform: scale(0.96); transition-duration: 0.08s; }
+  .segmentado button,
+  .abas-escudo button {
+    transition: background 0.3s var(--dm-ease), color 0.25s, box-shadow 0.3s, transform 0.15s var(--dm-ease);
+  }
+  .segmentado button:active,
+  .abas-escudo button:active,
+  .etiqueta-registro:active,
+  .cena-escudo:active,
+  .mencao:active,
+  .botao-busca:active { transform: scale(0.97); }
+  .etiqueta-registro,
+  .cena-escudo,
+  .mencao,
+  .botao-busca { transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s var(--dm-ease); }
+  .rosto:active .retrato { transform: scale(0.94); }
+
+  /* A opção escolhida acende ao ser marcada. */
+  .segmentado button[aria-pressed="true"],
+  .abas-escudo button[aria-selected="true"] { animation: acender 0.5s var(--dm-ease); }
+
+  /* ---------- Abas, regras e avisos ---------- */
+  /* Sair do d-none reinicia a animação, então a aba aparece suave a cada troca. */
+  [role="tabpanel"] { animation: surgir-leve 0.35s var(--dm-ease) backwards; }
+  details[open] > :not(summary) { animation: surgir-leve 0.3s var(--dm-ease) backwards; }
+  .alert { animation: surgir-leve 0.3s var(--dm-ease) backwards; }
+  .dica-texto { animation: surgir-leve 0.45s var(--dm-ease) backwards; }
+
+  /* ---------- Escudo: cena atual ---------- */
+  .progresso-cenas > span { transition-duration: 0.6s; }
+  .cena-escudo.atual .selo-escudo { animation: pulsar-selo 0.6s var(--dm-ease); }
+
+  /* ---------- Modais, cartão lateral e visualizador ---------- */
+  .modal.d-block .modal-dialog { animation: modal-surgir 0.32s var(--dm-ease) backwards; }
+  .modal-backdrop.show,
+  .visualizador-imagem { animation: esmaecer 0.25s ease backwards; }
+  .cartao-lateral { animation: deslizar-lateral 0.38s var(--dm-ease) backwards; }
+  .visualizador-palco > img { animation: imagem-surgir 0.4s var(--dm-ease) backwards; }
+}
+
+@keyframes entrar-pagina {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+}
+@keyframes surgir-leve {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@keyframes viagem-longe {
+  from { transform: translateY(18px); opacity: 0.4; }
+}
+@keyframes viagem-meio {
+  from { transform: translateY(36px) scale(1.02); }
+}
+@keyframes viagem-perto {
+  from { transform: translateY(64px) scale(1.05); }
+}
+@keyframes risco-estelar {
+  from { width: 0; opacity: 0; }
+}
+@keyframes acender {
+  0% { box-shadow: 0 0 0 0 rgba(var(--dm-violeta-rgb), 0.7); }
+  100% { box-shadow: 0 6px 18px -6px rgba(var(--dm-violeta-rgb), 0.7), 0 0 0 10px rgba(var(--dm-violeta-rgb), 0); }
+}
+@keyframes pulsar-selo {
+  0% { transform: scale(0.7); filter: drop-shadow(0 0 0 transparent); }
+  60% { transform: scale(1.12); filter: drop-shadow(0 0 8px var(--dm-violeta)); }
+  100% { transform: scale(1); }
+}
+@keyframes modal-surgir {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+}
+@keyframes esmaecer {
+  from { opacity: 0; }
+}
+@keyframes deslizar-lateral {
+  from { opacity: 0; transform: translateX(48px); }
+}
+@keyframes imagem-surgir {
+  from { opacity: 0; transform: scale(0.97); }
+}

@@ -21,7 +21,7 @@ export default function DicaConducao({ idSistema }) {
   return (
     <aside className="dica-conducao" aria-live="polite">
       <span className="dica-conducao-rotulo">Dica</span>
-      <span className="flex-grow-1">{dica.texto}</span>
+      <span key={dica.texto} className="flex-grow-1 dica-texto">{dica.texto}</span>
       <button type="button" className="btn btn-sm btn-fantasma px-2 py-0" onClick={() => setPulos((p) => p + 1)}>outra</button>
     </aside>
   );

@@ -10,6 +10,7 @@ import '@fontsource-variable/inter';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './estilo/tema.css';
 import './estilo/redesign.css';
+import './estilo/movimento.css';
 import App from './App.jsx';
 import { AuthProvider } from './auth/AuthContext.jsx';
 
