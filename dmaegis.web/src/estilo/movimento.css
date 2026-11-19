@@ -56,6 +56,10 @@
   /* ---------- Página: cada rota monta um <main> novo, que sobe saindo da névoa ---------- */
   main { animation: entrar-pagina 0.5s var(--dm-ease) backwards; }
   .projecao { animation-duration: 0.9s; }
+  /* Telas com o palco em position: fixed (projeção da mesa e jogador): só esmaecem. Um transform no <main>
+     viraria o bloco de referência dos filhos fixos durante a animação e o palco nasceria sem altura. */
+  .projecao-com-mesa,
+  .tela-jogador { animation-name: esmaecer; }
 
   /* Grades de cartões entram em sequência (até a 9.ª; as outras juntas). */
   main [class*="row-cols-"] > *,

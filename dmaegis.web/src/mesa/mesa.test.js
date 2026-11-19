@@ -88,3 +88,9 @@ test('cada sistema tem as próprias condições', () => {
   expect(dh).toEqual(['Contido', 'Oculto', 'Vulnerável']);
   expect(dh).not.toContain('Caído');
 });
+
+test('o link de convite usa o endereço da mesa sem barra sobrando', async () => {
+  const { linkDeConvite } = await import('./eventos.js');
+  expect(linkDeConvite('https://abc.trycloudflare.com/', 'x_y-1')).toBe('https://abc.trycloudflare.com/convite/x_y-1');
+  expect(linkDeConvite(' http://localhost:5080 ', 'c')).toBe('http://localhost:5080/convite/c');
+});

@@ -78,14 +78,37 @@ export default function PalcoMapa({
     setVista(enquadrar(largura, altura, palco.clientWidth, palco.clientHeight));
   }, [largura, altura]);
 
-  // Enquadra uma vez por mapa (e quando a imagem termina de carregar).
+  // O palco pode nascer com tamanho zero (aba em segundo plano, layout ainda montando): observa o tamanho.
+  const [palcoTemTamanho, setPalcoTemTamanho] = useState(false);
+  useEffect(() => {
+    const palco = palcoRef.current;
+    if (!palco || typeof ResizeObserver === 'undefined') {
+      setPalcoTemTamanho(true);
+      return undefined;
+    }
+    const observador = new ResizeObserver(([entrada]) =>
+      setPalcoTemTamanho(entrada.contentRect.width > 0 && entrada.contentRect.height > 0));
+    observador.observe(palco);
+    return () => observador.disconnect();
+  }, []);
+
+  // Ao desmontar, esquece o enquadramento. No StrictMode (desenvolvimento) o React desmonta e remonta
+  // o componente logo no início; sem isso, a marca sobrevivia e o primeiro enquadramento se perdia.
+  useLayoutEffect(() => () => {
+    enquadrouRef.current = null;
+  }, []);
+
+  // Enquadra uma vez por mapa (e quando a imagem termina de carregar), assim que o palco tiver tamanho.
   useLayoutEffect(() => {
     const chave = `${mesa.idImagemRegistro ?? 'estrelas'}:${tamanhoImagem ? 'pronto' : 'carregando'}`;
-    if (enquadrouRef.current === chave) return;
+    // clientWidth funciona mesmo sem desenhar (aba em segundo plano, onde o ResizeObserver não dispara).
+    const palco = palcoRef.current;
+    const temTamanho = palcoTemTamanho || (palco?.clientWidth > 0 && palco?.clientHeight > 0);
+    if (!temTamanho || enquadrouRef.current === chave) return;
     if (temImagem && !tamanhoImagem) return;
     enquadrouRef.current = chave;
     centralizar();
-  }, [mesa.idImagemRegistro, tamanhoImagem, temImagem, centralizar]);
+  }, [mesa.idImagemRegistro, tamanhoImagem, temImagem, centralizar, palcoTemTamanho]);
 
   // Roda do mouse: zoom em direção ao cursor. Ouvinte não passivo para poder impedir a rolagem da página.
   useEffect(() => {

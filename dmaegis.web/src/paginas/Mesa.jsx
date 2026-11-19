@@ -20,6 +20,9 @@ import { celulaLivrePerto } from '../mesa/grade.js';
 import ListaIniciativa from '../mesa/ListaIniciativa.jsx';
 import PainelFicha from '../mesa/PainelFicha.jsx';
 import PalcoMapa from '../mesa/PalcoMapa.jsx';
+import { urlEventosDaMesa } from '../api/jogador.js';
+import { ouvirMesa } from '../mesa/eventos.js';
+import PainelJogadores from '../mesa/PainelJogadores.jsx';
 import { abrirProjecao, avisarMesaMudou, mostrarMesaNaProjecao } from '../projecao/canal.js';
 
 const GRADE_PADRAO = { tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 0, gradeVisivel: true };
@@ -33,6 +36,7 @@ function corpoDaMesa(mesa, mudancas = {}) {
     deslocamentoX: m.deslocamentoX,
     deslocamentoY: m.deslocamentoY,
     gradeVisivel: m.gradeVisivel,
+    movimentoLivre: m.movimentoLivre ?? true,
   };
 }
 
@@ -81,9 +85,11 @@ export default function Mesa() {
   const [ajustandoGrade, setAjustandoGrade] = useState(false);
   const [excluindo, setExcluindo] = useState(null);
   const [renomeando, setRenomeando] = useState(false);
+  const [vendoJogadores, setVendoJogadores] = useState(false);
 
   const idMesa = Number(parametros.get('mesa')) || mesas?.[0]?.id || null;
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
+  const fecharJogadores = useCallback(() => setVendoJogadores(false), []);
   const condicoes = useMemo(() => condicoesDoSistema(campanha?.idSistema), [campanha?.idSistema]);
 
   useEffect(() => {
@@ -100,6 +106,17 @@ export default function Mesa() {
       ativo = false;
     };
   }, [idMesa]);
+
+  // Tempo real: quando um jogador move a ficha (ou outra aba mexe na mesa), busca a mesa de novo.
+  useEffect(() => {
+    if (!idMesa) return undefined;
+    return ouvirMesa(urlEventosDaMesa(id), () => {
+      obterMesa(idMesa).then((m) => {
+        setMesa(m);
+        avisarMesaMudou(m.id);
+      }).catch(() => {});
+    });
+  }, [id, idMesa]);
 
   // Toda resposta da API traz a mesa inteira: atualiza a tela e avisa a projeção.
   const aplicar = useCallback((nova) => {
@@ -263,6 +280,8 @@ export default function Mesa() {
               {mesa.ativa
                 ? <span className="selo-ativa" title="É a mesa que os jogadores veem">◉ Ativa</span>
                 : <button type="button" className="btn btn-sm btn-fantasma" onClick={() => executar(() => ativarMesa(mesa.id))}>Tornar ativa</button>}
+              <button type="button" className="btn btn-sm btn-fantasma" onClick={() => setVendoJogadores(true)}
+                title="Links de convite para os jogadores abrirem a mesa no navegador">Jogadores</button>
               <button type="button" className="btn btn-sm btn-primary"
                 onClick={() => { mostrarMesaNaProjecao(mesa.id); abrirProjecao(); }}
                 title="Abre a janela de projeção com o mapa, as fichas visíveis e a ordem dos turnos">
@@ -355,6 +374,11 @@ export default function Mesa() {
             setEscolhendoMapa(false);
             executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, { idImagemRegistro: idImagem })));
           }} />
+      )}
+
+      {vendoJogadores && mesa && (
+        <PainelJogadores idCampanha={id} mesa={mesa} aoFechar={fecharJogadores}
+          aoMudarMovimento={(livre) => executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, { movimentoLivre: livre })))} />
       )}
 
       <ConfirmarExclusao aberto={Boolean(excluindo)}
