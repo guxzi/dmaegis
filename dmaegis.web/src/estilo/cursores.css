@@ -1,17 +1,16 @@
 /*
  * DMAegis — cursor (19/11/2026)
- * Varinha estrelada em pixel art, azul bebê (desenho próprio, em public/cursores/):
- * - varinha.svg: inclinada, o cursor de sempre;
- * - varinha-aponta.svg: em pé, sobre o que é clicável.
- * Pedido do usuário: a varinha aparece SEMPRE enquanto o site estiver na tela — também em campos de texto,
+ * Céu noturno com contorno azul claro (desenho próprio, em public/cursores/):
+ * - seta.svg: a seta de sempre, com lua crescente e estrelas por dentro;
+ * - mao.svg: a mão apontando, sobre o que é clicável.
+ * Pedido do usuário: o cursor do site aparece SEMPRE enquanto o site estiver na tela — também em campos de texto,
  * no mapa e no pincel da névoa. Por isso as regras usam !important e cobrem todos os elementos e pseudo-elementos.
- * O ponto que clica é o centro da estrela.
  */
 
 :root {
-  --cursor-padrao: url('/cursores/varinha.svg') 16 16, auto;
-  --cursor-clique: url('/cursores/varinha-aponta.svg') 22 16, pointer;
-  /* Mantidos para o CSS que já usa os nomes antigos: agarrar o mapa também é a varinha. */
+  --cursor-padrao: url('/cursores/seta.svg') 4 4, auto;
+  --cursor-clique: url('/cursores/mao.svg') 15 3, pointer;
+  /* Mantidos para o CSS que já usa os nomes antigos: agarrar o mapa usa a seta e a mão. */
   --cursor-agarrar: var(--cursor-padrao);
   --cursor-agarrando: var(--cursor-clique);
 }
@@ -22,7 +21,7 @@ body,
 *::before,
 *::after { cursor: var(--cursor-padrao) !important; }
 
-/* Sobre o que é clicável, a varinha fica em pé — inclusive sobre o ícone ou o texto dentro do botão. */
+/* Sobre o que é clicável, a mão aponta — inclusive sobre o ícone ou o texto dentro do botão. */
 :is(a[href], button:not(:disabled), [role="button"], summary, label[for], select, .btn:not(:disabled), .btn-close,
   .form-check-input, .form-range, .nav-link, .dropdown-item, .linha-iniciativa, .rosto, .mencao, .opcao-mapa,
   .cartao-registro, .resultado-busca, input[type="checkbox"], input[type="radio"], input[type="range"],
