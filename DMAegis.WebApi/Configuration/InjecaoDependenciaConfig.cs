@@ -31,6 +31,9 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<ISegredoRepository, SegredoRepository>();
         services.AddScoped<IAnotacaoSessaoRepository, AnotacaoSessaoRepository>();
         services.AddScoped<IImagemRegistroRepository, ImagemRegistroRepository>();
+        services.AddScoped<IMesaRepository, MesaRepository>();
+        services.AddScoped<IParticipanteMesaRepository, ParticipanteMesaRepository>();
+        services.AddScoped<ICondicaoParticipanteRepository, CondicaoParticipanteRepository>();
 
         // Services
         services.AddScoped<ISaudeService, SaudeService>();
@@ -39,6 +42,7 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<IRegistroService, RegistroService>();
         services.AddScoped<ISessaoService, SessaoService>();
         services.AddScoped<IImagemService, ImagemService>();
+        services.AddScoped<IMesaService, MesaService>();
 
         // Validators (todos os AbstractValidator deste projeto)
         services.AddValidatorsFromAssemblyContaining<LoginValidator>();

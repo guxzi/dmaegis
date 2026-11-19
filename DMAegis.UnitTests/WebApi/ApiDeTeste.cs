@@ -20,6 +20,7 @@ public class ApiDeTeste
     public Mock<IRegistroService> Registros { get; } = new();
     public Mock<ISessaoService> Sessoes { get; } = new();
     public Mock<IImagemService> Imagens { get; } = new();
+    public Mock<IMesaService> Mesas { get; } = new();
 
     public HttpClient CriarCliente()
     {
@@ -31,6 +32,7 @@ public class ApiDeTeste
                 services.AddScoped(_ => Registros.Object);
                 services.AddScoped(_ => Sessoes.Object);
                 services.AddScoped(_ => Imagens.Object);
+                services.AddScoped(_ => Mesas.Object);
             }));
         return factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true });
     }

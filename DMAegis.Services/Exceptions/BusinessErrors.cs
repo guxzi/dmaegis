@@ -22,4 +22,7 @@ public static class BusinessErrors
     public static readonly (int Code, string DefaultMessage) ImagemInvalida = (14, "Envie uma imagem JPEG, PNG, WebP ou GIF.");
     public static readonly (int Code, string DefaultMessage) ImagemGrandeDemais = (15, "A imagem pode ter até 15 MB.");
     public static readonly (int Code, string DefaultMessage) LimiteImagens = (16, "Um registro pode ter até 30 imagens.");
+    public static readonly (int Code, string DefaultMessage) MesaNaoEncontrada = (17, "Mesa não encontrada.");
+    public static readonly (int Code, string DefaultMessage) ParticipanteNaoEncontrado = (18, "Ficha não encontrada.");
+    public static readonly (int Code, string DefaultMessage) LimiteParticipantes = (19, "Uma mesa pode ter até 60 fichas.");
 }

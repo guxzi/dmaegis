@@ -1,0 +1,578 @@
+using DMAegis.Model;
+using DMAegis.Repository;
+using DMAegis.Services.Exceptions;
+
+namespace DMAegis.Services;
+
+public class MesaResumoServiceModel
+{
+    public int Id { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public int? IdImagemRegistro { get; set; }
+    public bool Ativa { get; set; }
+    public bool EmCombate { get; set; }
+}
+
+public class ParticipanteServiceModel
+{
+    public int Id { get; set; }
+    public int? IdRegistro { get; set; }
+    public int? IdTipoRegistro { get; set; }
+    public int? IdImagemRetrato { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public bool Jogador { get; set; }
+    public int? Iniciativa { get; set; }
+    public int BonusIniciativa { get; set; }
+    public int? Ca { get; set; }
+    public int? PvAtual { get; set; }
+    public int? PvMaximo { get; set; }
+    public int? Coluna { get; set; }
+    public int? Linha { get; set; }
+    public int Tamanho { get; set; }
+    public bool Visivel { get; set; }
+    public int Ordem { get; set; }
+    public List<string> Condicoes { get; set; } = [];
+}
+
+public class MesaServiceModel
+{
+    public int Id { get; set; }
+    public int IdCampanha { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public int? IdImagemRegistro { get; set; }
+    public int TamanhoCelula { get; set; }
+    public int DeslocamentoX { get; set; }
+    public int DeslocamentoY { get; set; }
+    public bool GradeVisivel { get; set; }
+    public bool Ativa { get; set; }
+    public bool EmCombate { get; set; }
+    public int Rodada { get; set; }
+    public int? IdParticipanteVez { get; set; }
+
+    /// <summary>Na ordem da iniciativa (quem não tem iniciativa vai para o fim, na ordem de criação).</summary>
+    public List<ParticipanteServiceModel> Participantes { get; set; } = [];
+}
+
+public class SalvarMesaServiceModel
+{
+    public string Nome { get; set; } = string.Empty;
+    public int? IdImagemRegistro { get; set; }
+    public int TamanhoCelula { get; set; } = 70;
+    public int DeslocamentoX { get; set; }
+    public int DeslocamentoY { get; set; }
+    public bool GradeVisivel { get; set; } = true;
+}
+
+public class InserirParticipantesServiceModel
+{
+    /// <summary>Verdadeiro = todos os PJs da campanha que ainda não estão na mesa (ignora os outros campos).</summary>
+    public bool TodosJogadores { get; set; }
+    public int? IdRegistro { get; set; }
+
+    /// <summary>Obrigatório para ficha avulsa; com registro, substitui o nome dele.</summary>
+    public string? Nome { get; set; }
+    public int Quantidade { get; set; } = 1;
+}
+
+public class SalvarParticipanteServiceModel
+{
+    public string Nome { get; set; } = string.Empty;
+    public int? Iniciativa { get; set; }
+    public int BonusIniciativa { get; set; }
+    public int? Ca { get; set; }
+    public int? PvAtual { get; set; }
+    public int? PvMaximo { get; set; }
+    public int Tamanho { get; set; } = 1;
+    public bool Visivel { get; set; } = true;
+    public int Ordem { get; set; }
+    public List<string> Condicoes { get; set; } = [];
+}
+
+public class IniciativaServiceModel
+{
+    public int IdParticipante { get; set; }
+    public int? Iniciativa { get; set; }
+}
+
+/// <summary>Ficha como o jogador a vê: sem PV nem CA de quem não é PJ.</summary>
+public class ParticipanteVisaoServiceModel
+{
+    public int Id { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public bool Jogador { get; set; }
+    public int? IdTipoRegistro { get; set; }
+    public int? IdImagemRetrato { get; set; }
+    public int? Coluna { get; set; }
+    public int? Linha { get; set; }
+    public int Tamanho { get; set; }
+    public int? Ca { get; set; }
+    public int? PvAtual { get; set; }
+    public int? PvMaximo { get; set; }
+    public string? EstadoSaude { get; set; }
+    public List<string> Condicoes { get; set; } = [];
+    public bool EhMinha { get; set; }
+}
+
+public class VisaoJogadorServiceModel
+{
+    public int IdMesa { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public int? IdImagemRegistro { get; set; }
+    public int TamanhoCelula { get; set; }
+    public int DeslocamentoX { get; set; }
+    public int DeslocamentoY { get; set; }
+    public bool GradeVisivel { get; set; }
+    public bool EmCombate { get; set; }
+    public int Rodada { get; set; }
+    public int? IdParticipanteVez { get; set; }
+    public List<ParticipanteVisaoServiceModel> Participantes { get; set; } = [];
+}
+
+public interface IMesaService
+{
+    Task<IEnumerable<MesaResumoServiceModel>> ListarAsync(int idUsuario, int idCampanha);
+    Task<MesaServiceModel> ObterAsync(int idUsuario, int id);
+    Task<MesaServiceModel> InserirAsync(int idUsuario, int idCampanha, SalvarMesaServiceModel dados);
+    Task<MesaServiceModel> AtualizarAsync(int idUsuario, int id, SalvarMesaServiceModel dados);
+    Task ExcluirAsync(int idUsuario, int id);
+    Task<MesaServiceModel> AtivarAsync(int idUsuario, int id);
+
+    Task<MesaServiceModel> InserirParticipantesAsync(int idUsuario, int idMesa, InserirParticipantesServiceModel dados);
+    Task<MesaServiceModel> AtualizarParticipanteAsync(int idUsuario, int id, SalvarParticipanteServiceModel dados);
+    Task MoverParticipanteAsync(int idUsuario, int id, int? coluna, int? linha);
+    Task<MesaServiceModel> ExcluirParticipanteAsync(int idUsuario, int id);
+
+    Task<MesaServiceModel> IniciarCombateAsync(int idUsuario, int idMesa, IEnumerable<IniciativaServiceModel> iniciativas);
+    Task<MesaServiceModel> ProximoTurnoAsync(int idUsuario, int idMesa);
+    Task<MesaServiceModel> EncerrarCombateAsync(int idUsuario, int idMesa);
+
+    Task<VisaoJogadorServiceModel> ObterVisaoJogadorAsync(int idUsuario, int idMesa);
+}
+
+public class MesaService : IMesaService
+{
+    public const int MaximoParticipantes = 60;
+    public const int IdTipoJogador = 2;
+
+    private readonly IMesaRepository _mesaRepository;
+    private readonly IParticipanteMesaRepository _participanteRepository;
+    private readonly ICondicaoParticipanteRepository _condicaoRepository;
+    private readonly IRegistroRepository _registroRepository;
+    private readonly IAtributoRegistroRepository _atributoRepository;
+    private readonly IImagemRegistroRepository _imagemRepository;
+    private readonly ICampanhaService _campanhaService;
+
+    public MesaService(
+        IMesaRepository mesaRepository,
+        IParticipanteMesaRepository participanteRepository,
+        ICondicaoParticipanteRepository condicaoRepository,
+        IRegistroRepository registroRepository,
+        IAtributoRegistroRepository atributoRepository,
+        IImagemRegistroRepository imagemRepository,
+        ICampanhaService campanhaService)
+    {
+        _mesaRepository = mesaRepository;
+        _participanteRepository = participanteRepository;
+        _condicaoRepository = condicaoRepository;
+        _registroRepository = registroRepository;
+        _atributoRepository = atributoRepository;
+        _imagemRepository = imagemRepository;
+        _campanhaService = campanhaService;
+    }
+
+    // ---------- Mesas ----------
+
+    public async Task<IEnumerable<MesaResumoServiceModel>> ListarAsync(int idUsuario, int idCampanha)
+    {
+        await _campanhaService.ObterDoUsuarioOuLancarAsync(idUsuario, idCampanha);
+        return (await _mesaRepository.ListarPorCampanhaAsync(idCampanha))
+            .Select(m => new MesaResumoServiceModel
+            {
+                Id = m.Id, Nome = m.Nome, IdImagemRegistro = m.IdImagemRegistro, Ativa = m.Ativa, EmCombate = m.EmCombate,
+            })
+            .ToList();
+    }
+
+    public async Task<MesaServiceModel> ObterAsync(int idUsuario, int id) =>
+        await MontarAsync(await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id));
+
+    public async Task<MesaServiceModel> InserirAsync(int idUsuario, int idCampanha, SalvarMesaServiceModel dados)
+    {
+        await _campanhaService.ObterDoUsuarioOuLancarAsync(idUsuario, idCampanha);
+        await ConferirImagemDaCampanhaAsync(idCampanha, dados.IdImagemRegistro);
+
+        var agora = Agora();
+        // A primeira mesa da campanha já nasce ativa.
+        var primeira = !(await _mesaRepository.ListarPorCampanhaAsync(idCampanha)).Any();
+        var mesa = new Mesa
+        {
+            IdCampanha = idCampanha,
+            Nome = dados.Nome.Trim(),
+            IdImagemRegistro = dados.IdImagemRegistro,
+            TamanhoCelula = dados.TamanhoCelula,
+            DeslocamentoX = dados.DeslocamentoX,
+            DeslocamentoY = dados.DeslocamentoY,
+            GradeVisivel = dados.GradeVisivel,
+            Ativa = primeira,
+            DataCriacao = agora,
+            DataAtualizacao = agora,
+        };
+        mesa.Id = await _mesaRepository.InserirAsync(mesa);
+        return await MontarAsync(mesa);
+    }
+
+    public async Task<MesaServiceModel> AtualizarAsync(int idUsuario, int id, SalvarMesaServiceModel dados)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id);
+        await ConferirImagemDaCampanhaAsync(mesa.IdCampanha, dados.IdImagemRegistro);
+
+        mesa.Nome = dados.Nome.Trim();
+        mesa.IdImagemRegistro = dados.IdImagemRegistro;
+        mesa.TamanhoCelula = dados.TamanhoCelula;
+        mesa.DeslocamentoX = dados.DeslocamentoX;
+        mesa.DeslocamentoY = dados.DeslocamentoY;
+        mesa.GradeVisivel = dados.GradeVisivel;
+        mesa.DataAtualizacao = Agora();
+        await _mesaRepository.AtualizarAsync(mesa);
+        return await MontarAsync(mesa);
+    }
+
+    public async Task ExcluirAsync(int idUsuario, int id)
+    {
+        await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id);
+        await _mesaRepository.ExcluirAsync(id);
+    }
+
+    public async Task<MesaServiceModel> AtivarAsync(int idUsuario, int id)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, id);
+        await _mesaRepository.DefinirAtivaAsync(mesa.IdCampanha, mesa.Id);
+        mesa.Ativa = true;
+        return await MontarAsync(mesa);
+    }
+
+    // ---------- Participantes ----------
+
+    public async Task<MesaServiceModel> InserirParticipantesAsync(int idUsuario, int idMesa, InserirParticipantesServiceModel dados)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        var existentes = (await _participanteRepository.ListarPorMesaAsync(idMesa)).ToList();
+        var novos = dados.TodosJogadores
+            ? await NovosJogadoresAsync(mesa, existentes)
+            : await NovosDoPedidoAsync(mesa, dados, existentes);
+
+        if (existentes.Count + novos.Count > MaximoParticipantes)
+            throw new BusinessRuleException(BusinessErrors.LimiteParticipantes);
+
+        var ordem = existentes.Count == 0 ? 0 : existentes.Max(p => p.Ordem) + 1;
+        using (var transacao = Transacao.Iniciar())
+        {
+            foreach (var novo in novos)
+            {
+                novo.IdMesa = idMesa;
+                novo.Ordem = ordem++;
+                await _participanteRepository.InserirAsync(novo);
+            }
+            transacao.Complete();
+        }
+        return await MontarAsync(mesa);
+    }
+
+    public async Task<MesaServiceModel> AtualizarParticipanteAsync(int idUsuario, int id, SalvarParticipanteServiceModel dados)
+    {
+        var (participante, mesa) = await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
+
+        participante.Nome = dados.Nome.Trim();
+        participante.Iniciativa = dados.Iniciativa;
+        participante.BonusIniciativa = dados.BonusIniciativa;
+        participante.Ca = dados.Ca;
+        participante.PvMaximo = dados.PvMaximo;
+        // PV atual fica entre 0 e o máximo (quando há máximo).
+        participante.PvAtual = dados.PvAtual is null ? null
+            : Math.Max(0, dados.PvMaximo is null ? dados.PvAtual.Value : Math.Min(dados.PvAtual.Value, dados.PvMaximo.Value));
+        participante.Tamanho = dados.Tamanho;
+        participante.Visivel = dados.Visivel;
+        participante.Ordem = dados.Ordem;
+
+        var condicoes = dados.Condicoes
+            .Select(c => c.Trim())
+            .Where(c => c.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        using (var transacao = Transacao.Iniciar())
+        {
+            await _participanteRepository.AtualizarAsync(participante);
+            await _condicaoRepository.SubstituirAsync(participante.Id, condicoes);
+            transacao.Complete();
+        }
+        return await MontarAsync(mesa);
+    }
+
+    public async Task MoverParticipanteAsync(int idUsuario, int id, int? coluna, int? linha)
+    {
+        await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
+        // Só fora do mapa quando os dois são nulos; meio a meio não existe.
+        if (coluna is null || linha is null)
+            (coluna, linha) = (null, null);
+        await _participanteRepository.AtualizarPosicaoAsync(id, coluna, linha);
+    }
+
+    public async Task<MesaServiceModel> ExcluirParticipanteAsync(int idUsuario, int id)
+    {
+        var (_, mesa) = await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
+        await _participanteRepository.ExcluirAsync(id);
+        // Se era a vez dele, o banco limpa a vez (SET NULL); a mesa é lida de novo para refletir isso.
+        return await ObterAsync(idUsuario, mesa.Id);
+    }
+
+    // ---------- Combate ----------
+
+    public async Task<MesaServiceModel> IniciarCombateAsync(int idUsuario, int idMesa, IEnumerable<IniciativaServiceModel> iniciativas)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        var participantes = (await _participanteRepository.ListarPorMesaAsync(idMesa)).ToList();
+        var porId = participantes.ToDictionary(p => p.Id);
+
+        using (var transacao = Transacao.Iniciar())
+        {
+            // Ids de outras mesas são ignorados.
+            foreach (var item in iniciativas.Where(i => porId.ContainsKey(i.IdParticipante)))
+            {
+                porId[item.IdParticipante].Iniciativa = item.Iniciativa;
+                await _participanteRepository.AtualizarIniciativaAsync(item.IdParticipante, item.Iniciativa);
+            }
+
+            var vez = RegrasMesa.PrimeiraVez(RegrasMesa.OrdenarIniciativa(participantes));
+            await _mesaRepository.AtualizarCombateAsync(idMesa, true, 1, vez);
+            (mesa.EmCombate, mesa.Rodada, mesa.IdParticipanteVez) = (true, 1, vez);
+            transacao.Complete();
+        }
+        return await MontarAsync(mesa);
+    }
+
+    public async Task<MesaServiceModel> ProximoTurnoAsync(int idUsuario, int idMesa)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        if (!mesa.EmCombate)
+            return await MontarAsync(mesa);
+
+        var ordem = RegrasMesa.OrdenarIniciativa(await _participanteRepository.ListarPorMesaAsync(idMesa));
+        var (vez, rodada) = RegrasMesa.ProximaVez(ordem, mesa.IdParticipanteVez, Math.Max(mesa.Rodada, 1));
+        await _mesaRepository.AtualizarCombateAsync(idMesa, true, rodada, vez);
+        (mesa.Rodada, mesa.IdParticipanteVez) = (rodada, vez);
+        return await MontarAsync(mesa);
+    }
+
+    public async Task<MesaServiceModel> EncerrarCombateAsync(int idUsuario, int idMesa)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        await _mesaRepository.AtualizarCombateAsync(idMesa, false, 0, null);
+        (mesa.EmCombate, mesa.Rodada, mesa.IdParticipanteVez) = (false, 0, null);
+        return await MontarAsync(mesa);
+    }
+
+    // ---------- Visão dos jogadores ----------
+
+    public async Task<VisaoJogadorServiceModel> ObterVisaoJogadorAsync(int idUsuario, int idMesa) =>
+        FiltrarParaJogador(await ObterAsync(idUsuario, idMesa), idRegistroJogador: null);
+
+    /// <summary>
+    /// O único caminho do estado do mestre para o dos jogadores: tira as fichas ocultas e troca
+    /// PV e CA de quem não é PJ pela saúde em palavras. Nada do caderno passa daqui.
+    /// </summary>
+    public static VisaoJogadorServiceModel FiltrarParaJogador(MesaServiceModel mesa, int? idRegistroJogador)
+    {
+        var visiveis = mesa.Participantes.Where(p => p.Visivel).ToList();
+        return new VisaoJogadorServiceModel
+        {
+            IdMesa = mesa.Id,
+            Nome = mesa.Nome,
+            IdImagemRegistro = mesa.IdImagemRegistro,
+            TamanhoCelula = mesa.TamanhoCelula,
+            DeslocamentoX = mesa.DeslocamentoX,
+            DeslocamentoY = mesa.DeslocamentoY,
+            GradeVisivel = mesa.GradeVisivel,
+            EmCombate = mesa.EmCombate,
+            Rodada = mesa.Rodada,
+            IdParticipanteVez = visiveis.Any(p => p.Id == mesa.IdParticipanteVez) ? mesa.IdParticipanteVez : null,
+            Participantes = visiveis.Select(p => new ParticipanteVisaoServiceModel
+            {
+                Id = p.Id,
+                Nome = p.Nome,
+                Jogador = p.Jogador,
+                IdTipoRegistro = p.IdTipoRegistro,
+                IdImagemRetrato = p.IdImagemRetrato,
+                Coluna = p.Coluna,
+                Linha = p.Linha,
+                Tamanho = p.Tamanho,
+                Ca = p.Jogador ? p.Ca : null,
+                PvAtual = p.Jogador ? p.PvAtual : null,
+                PvMaximo = p.Jogador ? p.PvMaximo : null,
+                EstadoSaude = RegrasMesa.EstadoSaude(p.PvAtual, p.PvMaximo),
+                Condicoes = [.. p.Condicoes],
+                EhMinha = idRegistroJogador.HasValue && p.IdRegistro == idRegistroJogador,
+            }).ToList(),
+        };
+    }
+
+    // ---------- Apoio ----------
+
+    private async Task<List<ParticipanteMesa>> NovosJogadoresAsync(Mesa mesa, List<ParticipanteMesa> existentes)
+    {
+        var naMesa = existentes.Where(p => p.IdRegistro.HasValue).Select(p => p.IdRegistro!.Value).ToHashSet();
+        var jogadores = await _registroRepository.ListarAsync(mesa.IdCampanha, new FiltroRegistro { IdTipoRegistro = IdTipoJogador });
+        var novos = new List<ParticipanteMesa>();
+        foreach (var registro in jogadores.Where(r => !naMesa.Contains(r.Id)).OrderBy(r => r.Nome))
+            novos.Add(await ParticipanteDoRegistroAsync(registro, registro.Nome));
+        return novos;
+    }
+
+    private async Task<List<ParticipanteMesa>> NovosDoPedidoAsync(Mesa mesa, InserirParticipantesServiceModel dados, List<ParticipanteMesa> existentes)
+    {
+        var quantidade = Math.Clamp(dados.Quantidade, 1, MaximoParticipantes);
+        if (dados.IdRegistro is null)
+        {
+            var nome = (dados.Nome ?? string.Empty).Trim();
+            if (nome.Length == 0)
+                throw new BusinessRuleException((BusinessErrors.DadosInvalidos.Code, "Informe o nome da ficha."));
+            return RegrasMesa.NomesNumerados(nome, quantidade, existentes.Select(p => p.Nome))
+                .Select(n => new ParticipanteMesa { Nome = n, Tamanho = 1, Visivel = true })
+                .ToList();
+        }
+
+        var registro = await _registroRepository.ObterAsync(dados.IdRegistro.Value);
+        if (registro is null || registro.IdCampanha != mesa.IdCampanha)
+            throw new BusinessRuleException(BusinessErrors.RegistroNaoEncontrado);
+
+        var nomeBase = string.IsNullOrWhiteSpace(dados.Nome) ? registro.Nome : dados.Nome.Trim();
+        var novos = new List<ParticipanteMesa>();
+        foreach (var nome in RegrasMesa.NomesNumerados(nomeBase, quantidade, existentes.Select(p => p.Nome)))
+            novos.Add(await ParticipanteDoRegistroAsync(registro, nome));
+        return novos;
+    }
+
+    /// <summary>Ficha a partir do caderno: CA, PV e bônus de iniciativa vêm dos atributos, quando existem.</summary>
+    private async Task<ParticipanteMesa> ParticipanteDoRegistroAsync(Registro registro, string nome)
+    {
+        var atributos = (await _atributoRepository.ListarPorRegistroAsync(registro.Id))
+            .GroupBy(a => a.Chave.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Valor, StringComparer.OrdinalIgnoreCase);
+        int? Numero(string chave) => atributos.TryGetValue(chave, out var valor) ? RegrasMesa.NumeroDoAtributo(valor) : null;
+
+        var pv = Numero("PV");
+        return new ParticipanteMesa
+        {
+            IdRegistro = registro.Id,
+            Nome = nome.Length > 100 ? nome[..100] : nome,
+            Jogador = registro.IdTipoRegistro == IdTipoJogador,
+            Ca = Numero("CA"),
+            PvMaximo = pv,
+            PvAtual = pv,
+            BonusIniciativa = Numero("Iniciativa") ?? 0,
+            Tamanho = 1,
+            Visivel = true,
+        };
+    }
+
+    private async Task<MesaServiceModel> MontarAsync(Mesa mesa)
+    {
+        var participantes = await _participanteRepository.ListarPorMesaAsync(mesa.Id);
+        var condicoes = (await _condicaoRepository.ListarPorMesaAsync(mesa.Id))
+            .GroupBy(c => c.IdParticipante)
+            .ToDictionary(g => g.Key, g => g.Select(c => c.Nome).ToList());
+
+        // Retrato = a primeira imagem do registro; o tipo vem junto da mesma consulta (sem o conteúdo).
+        var imagens = (await _imagemRepository.ListarPorCampanhaAsync(mesa.IdCampanha)).ToList();
+        var retratos = imagens.GroupBy(i => i.IdRegistro).ToDictionary(g => g.Key, g => g.OrderBy(i => i.Ordem).ThenBy(i => i.Id).First().Id);
+        var tipos = await TiposDosRegistrosAsync(mesa.IdCampanha, participantes);
+
+        return new MesaServiceModel
+        {
+            Id = mesa.Id,
+            IdCampanha = mesa.IdCampanha,
+            Nome = mesa.Nome,
+            IdImagemRegistro = mesa.IdImagemRegistro,
+            TamanhoCelula = mesa.TamanhoCelula,
+            DeslocamentoX = mesa.DeslocamentoX,
+            DeslocamentoY = mesa.DeslocamentoY,
+            GradeVisivel = mesa.GradeVisivel,
+            Ativa = mesa.Ativa,
+            EmCombate = mesa.EmCombate,
+            Rodada = mesa.Rodada,
+            IdParticipanteVez = mesa.IdParticipanteVez,
+            Participantes = RegrasMesa.OrdenarIniciativa(participantes).Select(p => new ParticipanteServiceModel
+            {
+                Id = p.Id,
+                IdRegistro = p.IdRegistro,
+                IdTipoRegistro = p.IdRegistro.HasValue && tipos.TryGetValue(p.IdRegistro.Value, out var tipo) ? tipo : null,
+                IdImagemRetrato = p.IdRegistro.HasValue && retratos.TryGetValue(p.IdRegistro.Value, out var retrato) ? retrato : null,
+                Nome = p.Nome,
+                Jogador = p.Jogador,
+                Iniciativa = p.Iniciativa,
+                BonusIniciativa = p.BonusIniciativa,
+                Ca = p.Ca,
+                PvAtual = p.PvAtual,
+                PvMaximo = p.PvMaximo,
+                Coluna = p.Coluna,
+                Linha = p.Linha,
+                Tamanho = p.Tamanho,
+                Visivel = p.Visivel,
+                Ordem = p.Ordem,
+                Condicoes = condicoes.TryGetValue(p.Id, out var lista) ? lista : [],
+            }).ToList(),
+        };
+    }
+
+    private async Task<Dictionary<int, int>> TiposDosRegistrosAsync(int idCampanha, IEnumerable<ParticipanteMesa> participantes)
+    {
+        if (!participantes.Any(p => p.IdRegistro.HasValue))
+            return [];
+        var registros = await _registroRepository.ListarAsync(idCampanha, new FiltroRegistro());
+        return registros.ToDictionary(r => r.Id, r => r.IdTipoRegistro);
+    }
+
+    private async Task ConferirImagemDaCampanhaAsync(int idCampanha, int? idImagem)
+    {
+        if (idImagem is null)
+            return;
+        var imagens = await _imagemRepository.ListarPorCampanhaAsync(idCampanha);
+        if (!imagens.Any(i => i.Id == idImagem))
+            throw new BusinessRuleException(BusinessErrors.ImagemNaoEncontrada);
+    }
+
+    /// <summary>Mesa inexistente ou de campanha de outro usuário → MesaNaoEncontrada (404).</summary>
+    private async Task<Mesa> ObterMesaDoUsuarioOuLancarAsync(int idUsuario, int id)
+    {
+        var mesa = await _mesaRepository.ObterAsync(id) ?? throw new BusinessRuleException(BusinessErrors.MesaNaoEncontrada);
+        try
+        {
+            await _campanhaService.ObterDoUsuarioOuLancarAsync(idUsuario, mesa.IdCampanha);
+        }
+        catch (BusinessRuleException e) when (e.Code == BusinessErrors.CampanhaNaoEncontrada.Code)
+        {
+            throw new BusinessRuleException(BusinessErrors.MesaNaoEncontrada);
+        }
+        return mesa;
+    }
+
+    private async Task<(ParticipanteMesa Participante, Mesa Mesa)> ObterParticipanteDoUsuarioOuLancarAsync(int idUsuario, int id)
+    {
+        var participante = await _participanteRepository.ObterAsync(id)
+                           ?? throw new BusinessRuleException(BusinessErrors.ParticipanteNaoEncontrado);
+        try
+        {
+            return (participante, await ObterMesaDoUsuarioOuLancarAsync(idUsuario, participante.IdMesa));
+        }
+        catch (BusinessRuleException e) when (e.Code == BusinessErrors.MesaNaoEncontrada.Code)
+        {
+            throw new BusinessRuleException(BusinessErrors.ParticipanteNaoEncontrado);
+        }
+    }
+
+    private static DateTime Agora()
+    {
+        var agora = DateTime.Now;
+        return new DateTime(agora.Year, agora.Month, agora.Day, agora.Hour, agora.Minute, agora.Second, DateTimeKind.Unspecified);
+    }
+}

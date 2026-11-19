@@ -19,6 +19,8 @@ public static class StatusErroNegocio
         [BusinessErrors.SegredoNaoEncontrado.Code] = StatusCodes.Status404NotFound,
         [BusinessErrors.AnotacaoNaoEncontrada.Code] = StatusCodes.Status404NotFound,
         [BusinessErrors.ImagemNaoEncontrada.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.MesaNaoEncontrada.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.ParticipanteNaoEncontrado.Code] = StatusCodes.Status404NotFound,
     };
 
     public static int Obter(int code) =>
