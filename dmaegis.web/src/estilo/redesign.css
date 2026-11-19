@@ -687,7 +687,7 @@
 
 .secao-regras { margin-bottom: 0.6rem; }
 .secao-regras > summary {
-  cursor: pointer;
+  cursor: var(--cursor-clique);
   font-family: 'Cinzel', Georgia, serif;
   font-weight: 600;
   color: var(--dm-estrela);

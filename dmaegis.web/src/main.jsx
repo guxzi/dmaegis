@@ -12,6 +12,7 @@ import './estilo/tema.css';
 import './estilo/redesign.css';
 import './estilo/mesa.css';
 import './estilo/movimento.css';
+import './estilo/cursores.css';
 import App from './App.jsx';
 import { AuthProvider } from './auth/AuthContext.jsx';
 

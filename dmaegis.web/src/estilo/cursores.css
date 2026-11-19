@@ -1,0 +1,42 @@
+/*
+ * DMAegis — cursores (19/11/2026)
+ * Luva de mago estrelada, com manga de manto e lua crescente (desenho próprio, em public/cursores/).
+ * - padrão: a luva apontando; clique: a mesma luva com uma faísca na ponta do dedo;
+ * - agarrar / agarrando: a luva aberta e fechada (mover o mapa e as fichas).
+ * Campos de texto mantêm o cursor de texto, e o pincel da névoa mantém a mira.
+ * Para usar em CSS novo: cursor: var(--cursor-clique) (nunca a palavra-chave solta, como pointer).
+ */
+
+:root {
+  --cursor-padrao: url('/cursores/luva.svg') 13 2, auto;
+  --cursor-clique: url('/cursores/luva-aponta.svg') 13 2, pointer;
+  --cursor-agarrar: url('/cursores/luva-aberta.svg') 16 16, grab;
+  --cursor-agarrando: url('/cursores/luva-fechada.svg') 16 16, grabbing;
+}
+
+html,
+body { cursor: var(--cursor-padrao); }
+
+/* Elementos clicáveis: :where() tem especificidade zero, então qualquer regra do tema com cursor próprio
+   (as fichas da mesa, por exemplo) continua valendo. */
+:where(a[href], button:not(:disabled), [role="button"], summary, label[for], select, input[type="checkbox"],
+  input[type="radio"], input[type="range"], input[type="color"], input[type="file"]) {
+  cursor: var(--cursor-clique);
+}
+
+/* Classes do Bootstrap que já trazem cursor: pointer (este arquivo vem depois, então ganha). */
+.btn:not(:disabled):not(.disabled),
+.btn-close,
+.form-check-input,
+.form-check-label,
+.form-range,
+.form-select,
+.nav-link,
+.dropdown-item { cursor: var(--cursor-clique); }
+
+:where(input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="url"], input[type="tel"], input[type="date"], textarea, [contenteditable="true"]) {
+  cursor: text;
+}
+
+:where(button:disabled, .btn:disabled, .btn.disabled, input:disabled, select:disabled) { cursor: not-allowed; }

@@ -76,10 +76,10 @@
   box-shadow: var(--dm-sombra), 0 0 40px -18px rgba(var(--dm-violeta-rgb), 0.6);
   touch-action: none;
   user-select: none;
-  cursor: grab;
+  cursor: var(--cursor-agarrar);
 }
 .palco-mapa.arrastando,
-.palco-mapa:active { cursor: grabbing; }
+.palco-mapa:active { cursor: var(--cursor-agarrando); }
 .palco-conteudo {
   position: absolute;
   top: 0;
@@ -168,10 +168,13 @@
   left: 0;
   z-index: 2;
   container-type: size;
-  cursor: pointer;
+  cursor: var(--cursor-agarrar);
   transition: transform 0.35s var(--dm-ease);
 }
-.palco-jogador .ficha { cursor: default; }
+.palco-jogador .ficha { cursor: var(--cursor-padrao); }
+.palco-jogador .ficha-minha { cursor: var(--cursor-agarrar); }
+.ficha-arrastando,
+.palco-jogador .ficha-arrastando { cursor: var(--cursor-agarrando); }
 .ficha-arrastando { transition: none; z-index: 6; filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.7)); }
 .ficha-disco {
   position: absolute;
@@ -319,7 +322,7 @@
   padding: 0.9rem 1rem;
   border-radius: var(--dm-raio);
   backdrop-filter: blur(10px);
-  cursor: default;
+  cursor: var(--cursor-padrao);
 }
 .ajuste-grade-controle { display: block; margin-bottom: 0.35rem; }
 .ajuste-grade-controle span { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--dm-texto-suave); }
@@ -382,7 +385,7 @@
   border-radius: 12px;
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.025);
-  cursor: pointer;
+  cursor: var(--cursor-clique);
   transition: background 0.25s, border-color 0.25s, box-shadow 0.3s, opacity 0.3s;
 }
 .linha-iniciativa:hover { background: rgba(var(--dm-violeta-rgb), 0.1); }
@@ -620,7 +623,7 @@
   transform: translateX(-50%);
   overflow-x: auto;
   scrollbar-width: none;
-  cursor: default;
+  cursor: var(--cursor-padrao);
   box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.9);
 }
 .faixa-turnos ol { display: flex; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
