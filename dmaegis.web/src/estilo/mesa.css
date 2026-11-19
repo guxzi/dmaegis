@@ -414,7 +414,7 @@
 .iniciativa-selo {
   border: 0;
   padding: 0;
-  cursor: text;
+  cursor: var(--cursor-padrao);
   transition: transform 0.15s var(--dm-ease), filter 0.2s;
 }
 .iniciativa-selo:hover { filter: brightness(1.2); }
@@ -803,8 +803,8 @@
 /* Mestre: véu violeta translúcido, para enxergar o mapa e saber o que ainda está coberto. */
 .nevoa-mestre .nevoa-veu { fill: rgba(var(--dm-violeta-rgb), 0.28); }
 
-.palco-pintando { cursor: crosshair; }
-.palco-pintando:active { cursor: crosshair; }
+.palco-pintando,
+.palco-pintando:active { cursor: var(--cursor-padrao); }
 .palco-pintando .ficha { pointer-events: none; }
 .pincel-cursor,
 .pincel-area {

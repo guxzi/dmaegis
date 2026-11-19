@@ -1,42 +1,41 @@
 /*
- * DMAegis — cursores (19/11/2026)
- * Luva de mago estrelada, com manga de manto e lua crescente (desenho próprio, em public/cursores/).
- * - padrão: a luva apontando; clique: a mesma luva com uma faísca na ponta do dedo;
- * - agarrar / agarrando: a luva aberta e fechada (mover o mapa e as fichas).
- * Campos de texto mantêm o cursor de texto, e o pincel da névoa mantém a mira.
- * Para usar em CSS novo: cursor: var(--cursor-clique) (nunca a palavra-chave solta, como pointer).
+ * DMAegis — cursor (19/11/2026)
+ * Varinha estrelada em pixel art, azul bebê (desenho próprio, em public/cursores/):
+ * - varinha.svg: inclinada, o cursor de sempre;
+ * - varinha-aponta.svg: em pé, sobre o que é clicável.
+ * Pedido do usuário: a varinha aparece SEMPRE enquanto o site estiver na tela — também em campos de texto,
+ * no mapa e no pincel da névoa. Por isso as regras usam !important e cobrem todos os elementos e pseudo-elementos.
+ * O ponto que clica é o centro da estrela.
  */
 
 :root {
-  --cursor-padrao: url('/cursores/luva.svg') 13 2, auto;
-  --cursor-clique: url('/cursores/luva-aponta.svg') 13 2, pointer;
-  --cursor-agarrar: url('/cursores/luva-aberta.svg') 16 16, grab;
-  --cursor-agarrando: url('/cursores/luva-fechada.svg') 16 16, grabbing;
+  --cursor-padrao: url('/cursores/varinha.svg') 16 16, auto;
+  --cursor-clique: url('/cursores/varinha-aponta.svg') 22 16, pointer;
+  /* Mantidos para o CSS que já usa os nomes antigos: agarrar o mapa também é a varinha. */
+  --cursor-agarrar: var(--cursor-padrao);
+  --cursor-agarrando: var(--cursor-clique);
 }
 
 html,
-body { cursor: var(--cursor-padrao); }
+body,
+*,
+*::before,
+*::after { cursor: var(--cursor-padrao) !important; }
 
-/* Elementos clicáveis: :where() tem especificidade zero, então qualquer regra do tema com cursor próprio
-   (as fichas da mesa, por exemplo) continua valendo. */
-:where(a[href], button:not(:disabled), [role="button"], summary, label[for], select, input[type="checkbox"],
-  input[type="radio"], input[type="range"], input[type="color"], input[type="file"]) {
-  cursor: var(--cursor-clique);
+/* Sobre o que é clicável, a varinha fica em pé — inclusive sobre o ícone ou o texto dentro do botão. */
+:is(a[href], button:not(:disabled), [role="button"], summary, label[for], select, .btn:not(:disabled), .btn-close,
+  .form-check-input, .form-range, .nav-link, .dropdown-item, .linha-iniciativa, .rosto, .mencao, .opcao-mapa,
+  .cartao-registro, .resultado-busca, input[type="checkbox"], input[type="radio"], input[type="range"],
+  input[type="file"]),
+:is(a[href], button:not(:disabled), [role="button"], summary, label[for], .btn:not(:disabled), .linha-iniciativa,
+  .rosto, .mencao, .opcao-mapa, .cartao-registro, .resultado-busca)::before,
+:is(a[href], button:not(:disabled), [role="button"], summary, label[for], .btn:not(:disabled), .linha-iniciativa,
+  .rosto, .mencao, .opcao-mapa, .cartao-registro, .resultado-busca)::after,
+:is(a[href], button:not(:disabled), [role="button"], summary, label[for], .btn:not(:disabled), .linha-iniciativa,
+  .rosto, .mencao, .opcao-mapa, .cartao-registro, .resultado-busca) *,
+:is(a[href], button:not(:disabled), [role="button"], summary, label[for], .btn:not(:disabled), .linha-iniciativa,
+  .rosto, .mencao, .opcao-mapa, .cartao-registro, .resultado-busca) *::before,
+:is(a[href], button:not(:disabled), [role="button"], summary, label[for], .btn:not(:disabled), .linha-iniciativa,
+  .rosto, .mencao, .opcao-mapa, .cartao-registro, .resultado-busca) *::after {
+  cursor: var(--cursor-clique) !important;
 }
-
-/* Classes do Bootstrap que já trazem cursor: pointer (este arquivo vem depois, então ganha). */
-.btn:not(:disabled):not(.disabled),
-.btn-close,
-.form-check-input,
-.form-check-label,
-.form-range,
-.form-select,
-.nav-link,
-.dropdown-item { cursor: var(--cursor-clique); }
-
-:where(input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="password"],
-  input[type="number"], input[type="url"], input[type="tel"], input[type="date"], textarea, [contenteditable="true"]) {
-  cursor: text;
-}
-
-:where(button:disabled, .btn:disabled, .btn.disabled, input:disabled, select:disabled) { cursor: not-allowed; }
