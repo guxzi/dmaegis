@@ -20,6 +20,7 @@ public static class MesaMapper
         GradeVisivel = request.GradeVisivel,
         MovimentoLivre = request.MovimentoLivre,
         Nevoa = request.Nevoa,
+        Clima = string.IsNullOrWhiteSpace(request.Clima) ? null : request.Clima,
     };
 
     public static InserirParticipantesServiceModel ParaServiceModel(this InserirParticipantesRequestApiModel request) => new()
@@ -70,6 +71,7 @@ public static class MesaMapper
         GradeVisivel = mesa.GradeVisivel,
         MovimentoLivre = mesa.MovimentoLivre,
         Nevoa = mesa.Nevoa,
+        Clima = mesa.Clima,
         CelulasReveladas = mesa.CelulasReveladas.Select(ParaApi).ToList(),
         Ativa = mesa.Ativa,
         EmCombate = mesa.EmCombate,
@@ -108,6 +110,7 @@ public static class MesaMapper
         GradeVisivel = visao.GradeVisivel,
         MovimentoLivre = visao.MovimentoLivre,
         Nevoa = visao.Nevoa,
+        Clima = visao.Clima,
         CelulasReveladas = visao.CelulasReveladas.Select(ParaApi).ToList(),
         EmCombate = visao.EmCombate,
         Rodada = visao.Rodada,
@@ -129,6 +132,16 @@ public static class MesaMapper
             Condicoes = p.Condicoes,
             EhMinha = p.EhMinha,
         }).ToList(),
+    };
+
+    public static SinalMesaServiceModel ParaServiceModel(this SinalMesaRequestApiModel request) => new()
+    {
+        Tipo = request.Tipo ?? string.Empty,
+        Coluna = request.Coluna,
+        Linha = request.Linha,
+        IdParticipante = request.IdParticipante,
+        Emoji = request.Emoji,
+        Origem = request.Origem,
     };
 
     public static RolarServiceModel ParaServiceModel(this RolarRequestApiModel request) => new()

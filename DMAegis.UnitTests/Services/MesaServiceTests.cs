@@ -264,4 +264,55 @@ public class MesaServiceTests
             await CodigoAsync(() => CriarService().AlterarNevoaAsync(1, 6, [new() { Coluna = 1, Linha = 1 }], [])));
         _celulas.Verify(c => c.RevelarAsync(It.IsAny<int>(), It.IsAny<IEnumerable<(int Coluna, int Linha)>>()), Times.Never);
     }
+
+    [Fact]
+    public async Task SinalizarAsync_ArrastoDeFichaOcultaOuSobNevoa_SoParaOMestre()
+    {
+        SinalMesaServiceModel? enviado = null;
+        _canal.Setup(c => c.Sinalizar(10, It.IsAny<SinalMesaServiceModel>())).Callback<int, SinalMesaServiceModel>((_, s) => enviado = s);
+        _mesas.Setup(m => m.ObterAsync(5)).ReturnsAsync(() => new Mesa { Id = 5, IdCampanha = 10, Ativa = true, Nevoa = true });
+        _participantes.Setup(p => p.ObterAsync(1)).ReturnsAsync(new ParticipanteMesa { Id = 1, IdMesa = 5, Jogador = true, Visivel = true });
+        _participantes.Setup(p => p.ObterAsync(2)).ReturnsAsync(new ParticipanteMesa { Id = 2, IdMesa = 5, Visivel = true });
+        _participantes.Setup(p => p.ObterAsync(3)).ReturnsAsync(new ParticipanteMesa { Id = 3, IdMesa = 5, Jogador = true, Visivel = false });
+        _participantes.Setup(p => p.ObterAsync(9)).ReturnsAsync(new ParticipanteMesa { Id = 9, IdMesa = 77, Visivel = true });
+
+        await CriarService().SinalizarAsync(1, 5, new SinalMesaServiceModel { Tipo = "arrasto", IdParticipante = 1, Coluna = 2.5, Linha = 3 });
+        Assert.True(enviado!.Publico);
+        Assert.Equal("Mestre", enviado.Autor);
+
+        await CriarService().SinalizarAsync(1, 5, new SinalMesaServiceModel { Tipo = "arrasto", IdParticipante = 2, Coluna = 1, Linha = 1 });
+        Assert.False(enviado.Publico);
+        await CriarService().SinalizarAsync(1, 5, new SinalMesaServiceModel { Tipo = "arrasto-fim", IdParticipante = 3 });
+        Assert.False(enviado.Publico);
+
+        Assert.Equal(BusinessErrors.ParticipanteNaoEncontrado.Code,
+            await CodigoAsync(() => CriarService().SinalizarAsync(1, 5, new SinalMesaServiceModel { Tipo = "arrasto", IdParticipante = 9 })));
+    }
+
+    [Fact]
+    public async Task SinalizarAsync_PingEmMesaQueNaoEstaAtiva_FicaComOMestre_EMesaAlheiaCodigo17()
+    {
+        SinalMesaServiceModel? enviado = null;
+        _canal.Setup(c => c.Sinalizar(10, It.IsAny<SinalMesaServiceModel>())).Callback<int, SinalMesaServiceModel>((_, s) => enviado = s);
+
+        await CriarService().SinalizarAsync(1, 5, new SinalMesaServiceModel { Tipo = "ping", Coluna = 4, Linha = 4, IdParticipante = 2 });
+
+        Assert.False(enviado!.Publico);
+        Assert.Null(enviado.IdParticipante);
+        Assert.Equal(BusinessErrors.MesaNaoEncontrada.Code,
+            await CodigoAsync(() => CriarService().SinalizarAsync(1, 6, new SinalMesaServiceModel { Tipo = "ping", Coluna = 1, Linha = 1 })));
+    }
+
+    [Fact]
+    public async Task AtualizarAsync_GuardaOClima()
+    {
+        Mesa? salva = null;
+        _mesas.Setup(m => m.AtualizarAsync(It.IsAny<Mesa>())).Callback<Mesa>(m => salva = m);
+
+        var mesa = await CriarService().AtualizarAsync(1, 5, new SalvarMesaServiceModel { Nome = "Ponte", Clima = "chuva" });
+
+        Assert.Equal("chuva", salva!.Clima);
+        Assert.Equal("chuva", mesa.Clima);
+        Assert.Equal("chuva", MesaService.FiltrarParaJogador(mesa, null).Clima);
+    }
 }

@@ -2,18 +2,19 @@ import { CLASSE_SAUDE } from './combate.js';
 import PalcoMapa from './PalcoMapa.jsx';
 
 // O que os jogadores veem: o mapa com as fichas visíveis e, em combate, a ordem dos turnos no topo.
+// O anúncio da vez e os outros efeitos ficam no PalcoMapa; `sinais` traz pings, reações e arrastos de outras telas.
 // Recebe o estado já filtrado pelo servidor (sem fichas ocultas nem PV de monstros).
-export default function VisaoJogador({ visao, urlImagem, podeArrastar, aoMover }) {
+export default function VisaoJogador({ visao, urlImagem, podeArrastar, aoMover, sinais, aoPing, aoArrastar }) {
   const mesa = { ...visao, id: visao.idMesa };
   const naOrdem = visao.participantes;
-  const daVez = naOrdem.find((p) => p.id === visao.idParticipanteVez);
   const minha = naOrdem.find((p) => p.ehMinha && p.coluna != null);
   const foco = minha ? { coluna: minha.coluna, linha: minha.linha } : null;
 
   return (
     <div className="visao-jogador">
       <PalcoMapa mesa={mesa} urlImagem={urlImagem} modo="jogador" podeArrastar={podeArrastar ?? (() => false)} aoMover={aoMover}
-        focoNoCelular={foco}>
+        focoNoCelular={foco} pings={sinais?.pings} reacoes={sinais?.reacoes} arrastosRemotos={sinais?.arrastos}
+        aoPing={aoPing} aoArrastar={aoArrastar}>
         {visao.emCombate && naOrdem.length > 0 && (
           <div className="faixa-turnos" onPointerDown={(e) => e.stopPropagation()}>
             <span className="faixa-turnos-rodada">Rodada {visao.rodada}</span>
@@ -31,11 +32,6 @@ export default function VisaoJogador({ visao, urlImagem, podeArrastar, aoMover }
                 </li>
               ))}
             </ol>
-          </div>
-        )}
-        {visao.emCombate && daVez && (
-          <div className="anuncio-vez" key={`${visao.rodada}-${daVez.id}`} aria-live="polite">
-            {daVez.ehMinha ? 'É a sua vez!' : <>Vez de <strong>{daVez.nome}</strong></>}
           </div>
         )}
       </PalcoMapa>

@@ -33,6 +33,9 @@ public class Mesa
     /// <summary>st_nevoa (os jogadores só veem as células reveladas)</summary>
     public bool Nevoa { get; set; }
 
+    /// <summary>ds_clima (efeito por cima do mapa: chuva, neve, neblina ou brasas; nulo = sem clima)</summary>
+    public string? Clima { get; set; }
+
     /// <summary>st_ativa (a que os jogadores veem; no máximo uma por campanha)</summary>
     public bool Ativa { get; set; }
 

@@ -21,6 +21,7 @@ public class MesaController : ControllerBase
     private readonly IValidator<SalvarParticipanteRequestApiModel> _validatorParticipante;
     private readonly IValidator<MoverParticipanteRequestApiModel> _validatorMover;
     private readonly IValidator<AlterarNevoaRequestApiModel> _validatorNevoa;
+    private readonly IValidator<SinalMesaRequestApiModel> _validatorSinal;
 
     public MesaController(
         IMesaService mesaService,
@@ -28,8 +29,10 @@ public class MesaController : ControllerBase
         IValidator<InserirParticipantesRequestApiModel> validatorInserir,
         IValidator<SalvarParticipanteRequestApiModel> validatorParticipante,
         IValidator<MoverParticipanteRequestApiModel> validatorMover,
-        IValidator<AlterarNevoaRequestApiModel> validatorNevoa)
+        IValidator<AlterarNevoaRequestApiModel> validatorNevoa,
+        IValidator<SinalMesaRequestApiModel> validatorSinal)
     {
+        _validatorSinal = validatorSinal;
         _mesaService = mesaService;
         _validatorMesa = validatorMesa;
         _validatorInserir = validatorInserir;
@@ -72,6 +75,15 @@ public class MesaController : ControllerBase
     public async Task<ActionResult<ApiResponse<object>>> Excluir(int id)
     {
         await _mesaService.ExcluirAsync(User.ObterIdUsuario(), id);
+        return Ok(ApiResponse<object>.Sucesso(null!));
+    }
+
+    /// <summary>Sinal passageiro (ping, reação, arrasto ao vivo): vai para as telas abertas, nada é gravado.</summary>
+    [HttpPost("api/mesas/{id:int}/sinais")]
+    public async Task<ActionResult<ApiResponse<object>>> Sinalizar(int id, [FromBody] SinalMesaRequestApiModel request)
+    {
+        await _validatorSinal.ValidarOuLancarAsync(request);
+        await _mesaService.SinalizarAsync(User.ObterIdUsuario(), id, request.ParaServiceModel());
         return Ok(ApiResponse<object>.Sucesso(null!));
     }
 

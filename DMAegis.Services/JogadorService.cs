@@ -47,6 +47,9 @@ public interface IJogadorService
 
     /// <summary>Só o mapa da mesa ativa e os retratos das fichas que o jogador vê.</summary>
     Task<(string TipoConteudo, byte[] Conteudo)> ObterImagemAsync(JogadorLogadoServiceModel jogador, int idImagem);
+
+    /// <summary>Sinal passageiro do jogador: ping no mapa, reação ou o arrasto da própria ficha.</summary>
+    Task SinalizarAsync(JogadorLogadoServiceModel jogador, SinalMesaServiceModel sinal);
 }
 
 public class JogadorService : IJogadorService
@@ -186,6 +189,31 @@ public class JogadorService : IJogadorService
                     ?? throw new BusinessRuleException(BusinessErrors.FichaForaDaMesa);
         await _participanteRepository.AtualizarPosicaoAsync(minha.Id, coluna, linha);
         _canal.Avisar(jogador.IdCampanha);
+    }
+
+    public async Task SinalizarAsync(JogadorLogadoServiceModel jogador, SinalMesaServiceModel sinal)
+    {
+        await ConferirAcessoAsync(jogador);
+        var mesa = await _mesaService.MontarAtivaAsync(jogador.IdCampanha)
+                   ?? throw new BusinessRuleException(BusinessErrors.MesaNaoEncontrada);
+        var minha = mesa.Participantes.FirstOrDefault(p => p.IdRegistro == jogador.IdRegistro && p.Visivel && p.Coluna.HasValue);
+
+        sinal.Autor = jogador.NomePersonagem;
+        sinal.IdMesa = mesa.Id;
+        sinal.Publico = true;
+        if (sinal.Tipo is RegrasMesa.SinalArrasto or RegrasMesa.SinalArrastoFim)
+        {
+            // As mesmas regras de mover: movimento liberado e só a própria ficha, já no mapa.
+            if (!mesa.MovimentoLivre)
+                throw new BusinessRuleException(BusinessErrors.MovimentoBloqueado);
+            sinal.IdParticipante = (minha ?? throw new BusinessRuleException(BusinessErrors.FichaForaDaMesa)).Id;
+        }
+        else
+        {
+            // A reação sai da ficha de quem reagiu (ou do meio da tela, se ela não estiver no mapa).
+            sinal.IdParticipante = sinal.Tipo == RegrasMesa.SinalReacao ? minha?.Id : null;
+        }
+        _canal.Sinalizar(jogador.IdCampanha, sinal);
     }
 
     public async Task<(string TipoConteudo, byte[] Conteudo)> ObterImagemAsync(JogadorLogadoServiceModel jogador, int idImagem)

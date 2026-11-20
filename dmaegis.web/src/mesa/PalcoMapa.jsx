@@ -1,18 +1,38 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { COR_TIPO } from '../caderno/tipos.js';
 import { CLASSE_SAUDE, estadoSaude, fracaoPv } from './combate.js';
+import CamadaClima from './CamadaClima.jsx';
 import CamadaNevoa from './CamadaNevoa.jsx';
+import { celulasRecemReveladas, combateComecou, mudancasDeSaude, novaVez } from './efeitos.js';
+import {
+  AberturaCombate, AnuncioVez, Holofote, NumerosFlutuantes, Pings, PoeiraNevoa, ReacoesNaFicha, ReacoesSoltas,
+} from './EfeitosPalco.jsx';
 import {
   celulaDoPonto, distanciaNaGrade, enquadrar, pontoDaCelula, textoDaDistancia, vistaCentradaNaCelula, vistaDaPinca, zoomNoPonto,
 } from './grade.js';
 import {
   caminhoEntre, celulasDoPincel, celulasDoRetangulo, conjuntoDe, diferenca, limitesDaGrade, pintar,
 } from './nevoa.js';
+import { useEfeitosPassageiros } from './useEfeitos.js';
 
 // Sem mapa, a mesa é um campo estrelado com esta grade (em células).
 const COLUNAS_SEM_MAPA = 30;
 const LINHAS_SEM_MAPA = 18;
 const LIMIAR_ARRASTO = 4;
+// Segurar o dedo (ou o botão) parado no fundo por esse tempo solta um ping.
+const TEMPO_PING = 550;
+
+// Comparações dos efeitos (fora do componente, para não mudarem a cada desenho).
+const compararAbertura = (a, b) => (combateComecou(a, b) ? [{}] : []);
+const compararVez = (a, b) => {
+  const ficha = novaVez(a, b);
+  return ficha ? [{ nome: ficha.nome, minha: Boolean(ficha.ehMinha), depoisDaAbertura: combateComecou(a, b) }] : [];
+};
+const compararNevoa = (a, b) => {
+  if (a.id !== b.id || !b.nevoa) return [];
+  const celulas = celulasRecemReveladas(a.reveladas, b.reveladas);
+  return celulas.length ? [{ celulas }] : [];
+};
 
 // Cor do anel: PJ em cobalto, criatura em vermelho suave, o resto na cor do tipo do caderno.
 function corDaFicha(ficha) {
@@ -20,7 +40,7 @@ function corDaFicha(ficha) {
   return COR_TIPO[ficha.idTipoRegistro] ?? 'var(--dm-estrela)';
 }
 
-function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando, modo, aoApertar }) {
+function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando, remota, impacto, modo, aoApertar }) {
   const lado = (ficha.tamanho || 1) * mesa.tamanhoCelula;
   const saude = ficha.estadoSaude ?? estadoSaude(ficha.pvAtual, ficha.pvMaximo);
   const fracao = fracaoPv(ficha.pvAtual, ficha.pvMaximo);
@@ -33,6 +53,9 @@ function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando
     ficha.visivel === false && 'ficha-oculta',
     saude === 'Caído' && 'ficha-caida',
     ficha.ehMinha && 'ficha-minha',
+    remota && 'ficha-remota',
+    impacto?.tipo === 'dano' && 'ficha-golpe',
+    impacto?.tipo === 'cura' && 'ficha-curada',
   ].filter(Boolean).join(' ');
 
   return (
@@ -45,6 +68,7 @@ function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando
           : <span className="ficha-inicial">{ficha.nome.charAt(0)}</span>}
       </div>
       {daVez && <span className="ficha-orbita" aria-hidden="true" />}
+      {impacto && <span key={impacto.chave} className={`ficha-impacto impacto-${impacto.tipo}`} aria-hidden="true" />}
       {ficha.condicoes?.length > 0 && (
         <span className="ficha-condicoes" title={ficha.condicoes.join(', ')}>{ficha.condicoes.length}</span>
       )}
@@ -65,7 +89,8 @@ function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando
 // (Shift + arrastar pinta um retângulo) e, ao soltar, `aoPintarNevoa({ revelar, esconder })` recebe a diferença.
 export default function PalcoMapa({
   mesa, urlImagem, modo = 'mestre', podeArrastar = () => false, aoMover, idSelecionada = null,
-  aoSelecionar = () => {}, pincel = null, aoPintarNevoa, aoMedirGrade, focoNoCelular = null, children,
+  aoSelecionar = () => {}, pincel = null, aoPintarNevoa, aoMedirGrade, focoNoCelular = null,
+  pings = [], reacoes = [], arrastosRemotos = {}, aoPing, aoArrastar, children,
 }) {
   const palcoRef = useRef(null);
   const [vista, setVista] = useState({ x: 0, y: 0, escala: 1 });
@@ -89,6 +114,15 @@ export default function PalcoMapa({
   const limites = useMemo(() => limitesDaGrade(largura, altura, mesa), [largura, altura, mesa]);
   const reveladasSalvas = useMemo(() => conjuntoDe(mesa.celulasReveladas ?? []), [mesa.celulasReveladas]);
   const reveladas = pintura?.atual ?? reveladasSalvas;
+
+  // Efeitos que nascem da diferença entre um estado da mesa e o seguinte (vale para as três telas).
+  const efeitosSaude = useEfeitosPassageiros(mesa, mudancasDeSaude, 1800);
+  const aberturas = useEfeitosPassageiros(mesa, compararAbertura, 2600);
+  const anuncios = useEfeitosPassageiros(mesa, compararVez, 5200);
+  const estadoNevoa = useMemo(() => ({ id: mesa.id, nevoa: mesa.nevoa, reveladas: reveladasSalvas }), [mesa.id, mesa.nevoa, reveladasSalvas]);
+  const poeira = useEfeitosPassageiros(estadoNevoa, compararNevoa, 1700);
+  // O impacto mais recente de cada ficha (tremor no dano, brilho na cura).
+  const impactos = new Map(efeitosSaude.map((e) => [e.idFicha, e]));
 
   // Conta da grade para quem usa a mesa (o "Revelar tudo" do mestre precisa saber o tamanho).
   useEffect(() => {
@@ -186,6 +220,10 @@ export default function PalcoMapa({
 
   function apertarFundo(evento) {
     if (evento.button !== 0) return;
+    if (evento.altKey && aoPing && !pincel) {
+      aoPing(celulaDoEvento(evento));
+      return;
+    }
     if (regua && !pincel) {
       const celula = celulaDoEvento(evento);
       clearTimeout(apagarMedida.current);
@@ -204,7 +242,17 @@ export default function PalcoMapa({
       evento.currentTarget.setPointerCapture(evento.pointerId);
       return;
     }
-    gesto.current = { tipo: 'mover-vista', inicioX: evento.clientX, inicioY: evento.clientY, vista, moveu: false };
+    const g = { tipo: 'mover-vista', inicioX: evento.clientX, inicioY: evento.clientY, vista, moveu: false };
+    if (aoPing) {
+      // Segurar parado solta um ping (no celular é o jeito de apontar; no PC também vale Alt + clique).
+      const celula = celulaDoEvento(evento);
+      g.timerPing = setTimeout(() => {
+        if (gesto.current !== g || g.moveu) return;
+        g.pingou = true;
+        aoPing(celula);
+      }, TEMPO_PING);
+    }
+    gesto.current = g;
     evento.currentTarget.setPointerCapture(evento.pointerId);
   }
 
@@ -243,6 +291,9 @@ export default function PalcoMapa({
       const meio = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       if (gesto.current?.tipo !== 'pinca') {
         // Começou a pinça: o que o primeiro dedo fazia (arrastar ficha, mover a vista) é cancelado.
+        const anterior = gesto.current;
+        clearTimeout(anterior?.timerPing);
+        if (anterior?.tipo === 'ficha' && arrasto) aoArrastar?.(anterior.ficha, null, true);
         gesto.current = { tipo: 'pinca', dist, meio, vista };
         setArrasto(null);
         return;
@@ -274,12 +325,19 @@ export default function PalcoMapa({
       return;
     }
     const distancia = Math.hypot(evento.clientX - g.inicioX, evento.clientY - g.inicioY);
-    if (distancia > LIMIAR_ARRASTO) g.moveu = true;
+    if (distancia > LIMIAR_ARRASTO) {
+      g.moveu = true;
+      clearTimeout(g.timerPing);
+    }
     if (g.tipo === 'mover-vista') {
       setVista({ ...g.vista, x: g.vista.x + evento.clientX - g.inicioX, y: g.vista.y + evento.clientY - g.inicioY });
     } else if (g.moveu && podeArrastar(g.ficha)) {
       const ponto = pontoNoMapa(evento);
-      setArrasto({ id: g.ficha.id, x: ponto.x - g.folgaX, y: ponto.y - g.folgaY });
+      const x = ponto.x - g.folgaX;
+      const y = ponto.y - g.folgaY;
+      setArrasto({ id: g.ficha.id, x, y });
+      // As outras telas veem a ficha andando (em células, com fração).
+      aoArrastar?.(g.ficha, { coluna: (x - mesa.deslocamentoX) / mesa.tamanhoCelula, linha: (y - mesa.deslocamentoY) / mesa.tamanhoCelula }, false);
     }
   }
 
@@ -305,7 +363,8 @@ export default function PalcoMapa({
       return;
     }
     if (g.tipo === 'mover-vista') {
-      if (!g.moveu) aoSelecionar(null);
+      clearTimeout(g.timerPing);
+      if (!g.moveu && !g.pingou) aoSelecionar(null);
       return;
     }
     if (!g.moveu) {
@@ -316,6 +375,7 @@ export default function PalcoMapa({
     if (arrasto && podeArrastar(g.ficha)) {
       const lado = (g.ficha.tamanho || 1) * mesa.tamanhoCelula;
       const { coluna, linha } = celulaDoPonto(arrasto.x + lado / 2, arrasto.y + lado / 2, mesa, g.ficha.tamanho || 1);
+      aoArrastar?.(g.ficha, { coluna, linha }, true);
       if (coluna !== g.ficha.coluna || linha !== g.ficha.linha) aoMover?.(g.ficha, coluna, linha);
     }
     setArrasto(null);
@@ -328,6 +388,13 @@ export default function PalcoMapa({
   }
 
   const noMapa = mesa.participantes.filter((p) => p.coluna != null && p.linha != null);
+  // Onde desenhar cada ficha: a que eu arrasto segue o cursor; a que outra tela arrasta segue o sinal.
+  const posicaoDe = (ficha) => {
+    if (arrasto?.id === ficha.id) return arrasto;
+    const remoto = arrastosRemotos[ficha.id];
+    if (remoto) return { x: mesa.deslocamentoX + remoto.coluna * mesa.tamanhoCelula, y: mesa.deslocamentoY + remoto.linha * mesa.tamanhoCelula };
+    return pontoDaCelula(ficha.coluna, ficha.linha, mesa);
+  };
   const fichaArrastada = arrasto && noMapa.find((p) => p.id === arrasto.id);
   const destino = fichaArrastada && (() => {
     const lado = (fichaArrastada.tamanho || 1) * mesa.tamanhoCelula;
@@ -338,9 +405,12 @@ export default function PalcoMapa({
   return (
     <div className={`palco-mapa palco-${modo}${arrasto ? ' arrastando' : ''}${pincel ? ' palco-pintando' : ''}${regua && !pincel ? ' palco-medindo' : ''}`} ref={palcoRef}
       onPointerDownCapture={registrarDedo} onPointerDown={apertarFundo} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
-      onPointerLeave={() => setCelulaSobCursor(null)}>
+      onPointerLeave={() => setCelulaSobCursor(null)} onContextMenu={(e) => aoPing && e.preventDefault()}>
       <div className="palco-conteudo"
-        style={{ width: largura, height: altura, transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.escala})` }}>
+        style={{
+          width: largura, height: altura, transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.escala})`,
+          '--zoom-inverso': 1 / vista.escala,
+        }}>
         {temImagem
           ? <img className="palco-imagem" src={urlImagem(mesa.idImagemRegistro)} alt="" draggable={false}
               onLoad={(e) => setImagemCarregada({
@@ -360,9 +430,12 @@ export default function PalcoMapa({
           </svg>
         )}
 
+        <Holofote mesa={mesa} posicaoDe={posicaoDe} />
+
         {mesa.nevoa && (
           <CamadaNevoa largura={largura} altura={altura} mesa={mesa} reveladas={reveladas} modo={modo} />
         )}
+        <PoeiraNevoa efeitos={poeira} mesa={mesa} />
 
         {pincel && pintura?.retangulo && (() => {
           const a = pintura.retangulo.a;
@@ -413,17 +486,23 @@ export default function PalcoMapa({
           <div className="palco-destino" style={{ width: destino.lado, height: destino.lado, transform: `translate(${destino.x}px, ${destino.y}px)` }} />
         )}
 
-        {noMapa.map((ficha) => {
-          const posicao = arrasto?.id === ficha.id ? arrasto : pontoDaCelula(ficha.coluna, ficha.linha, mesa);
-          return (
-            <Ficha key={ficha.id} ficha={ficha} mesa={mesa} urlImagem={urlImagem} posicao={posicao} modo={modo}
-              selecionada={ficha.id === idSelecionada} daVez={mesa.emCombate && ficha.id === mesa.idParticipanteVez}
-              arrastando={arrasto?.id === ficha.id} aoApertar={apertarFicha} />
-          );
-        })}
+        {noMapa.map((ficha) => (
+          <Ficha key={ficha.id} ficha={ficha} mesa={mesa} urlImagem={urlImagem} posicao={posicaoDe(ficha)} modo={modo}
+            selecionada={ficha.id === idSelecionada} daVez={mesa.emCombate && ficha.id === mesa.idParticipanteVez}
+            arrastando={arrasto?.id === ficha.id} remota={arrasto?.id !== ficha.id && Boolean(arrastosRemotos[ficha.id])}
+            impacto={impactos.get(ficha.id)} aoApertar={apertarFicha} />
+        ))}
+
+        <NumerosFlutuantes efeitos={efeitosSaude} mesa={mesa} posicaoDe={posicaoDe} />
+        <ReacoesNaFicha reacoes={reacoes} mesa={mesa} posicaoDe={posicaoDe} />
+        <Pings pings={pings} mesa={mesa} />
       </div>
 
+      <CamadaClima clima={mesa.clima} />
       <div className="palco-vinheta" aria-hidden="true" />
+      <ReacoesSoltas reacoes={reacoes} mesa={mesa} />
+      <AnuncioVez anuncios={anuncios} />
+      <AberturaCombate aberturas={aberturas} />
 
       <div className="palco-zoom" onPointerDown={(e) => e.stopPropagation()}>
         <button type="button" onClick={() => zoomBotao(1 / 1.25)} aria-label="Afastar">−</button>

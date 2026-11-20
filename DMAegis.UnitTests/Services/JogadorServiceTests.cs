@@ -164,15 +164,55 @@ public class JogadorServiceTests
     public void CanalMesa_AvisaQuemOuveACampanha_EParaAoDescartar()
     {
         var canal = new CanalMesa();
-        var (leitor, inscricao) = canal.Assinar(10);
-        var (outra, inscricaoOutra) = canal.Assinar(20);
+        var (leitor, inscricao) = canal.Assinar(10, mestre: true);
+        var (outra, inscricaoOutra) = canal.Assinar(20, mestre: true);
 
         canal.Avisar(10);
 
-        Assert.True(leitor.TryRead(out _));
+        Assert.True(leitor.TryRead(out var aviso));
+        Assert.Equal("mesa", aviso!.Evento);
         Assert.False(outra.TryRead(out _));
         inscricao.Dispose();
         inscricaoOutra.Dispose();
         Assert.Equal(0, canal.ContarOuvintes(10));
+    }
+
+    [Fact]
+    public void CanalMesa_SinalPrivadoSoChegaAoMestre()
+    {
+        var canal = new CanalMesa();
+        var (mestre, inscricaoMestre) = canal.Assinar(10, mestre: true);
+        var (jogador, inscricaoJogador) = canal.Assinar(10, mestre: false);
+
+        canal.Sinalizar(10, new SinalMesaServiceModel { Tipo = "arrasto", IdParticipante = 2, Publico = false });
+        Assert.True(mestre.TryRead(out var aviso));
+        Assert.Equal("sinal", aviso!.Evento);
+        Assert.Contains("\"idParticipante\":2", aviso.Dados);
+        Assert.False(jogador.TryRead(out _));
+
+        canal.Sinalizar(10, new SinalMesaServiceModel { Tipo = "ping", Coluna = 1, Linha = 1, Publico = true });
+        Assert.True(jogador.TryRead(out _));
+        inscricaoMestre.Dispose();
+        inscricaoJogador.Dispose();
+    }
+
+    [Fact]
+    public async Task SinalizarAsync_ArrastoUsaSempreAPropriaFicha_ERespeitaOMovimentoTravado()
+    {
+        MesaAtiva();
+        SinalMesaServiceModel? enviado = null;
+        _canal.Setup(c => c.Sinalizar(10, It.IsAny<SinalMesaServiceModel>())).Callback<int, SinalMesaServiceModel>((_, s) => enviado = s);
+        var lilica = new JogadorLogadoServiceModel { IdCampanha = 10, IdRegistro = 100, NomePersonagem = "Lilica Lovejoy", Marca = _lilica.Marca };
+
+        // Tentou arrastar o goblin (id 2): o sinal sai com a ficha dela (id 1).
+        await CriarService().SinalizarAsync(lilica, new SinalMesaServiceModel { Tipo = "arrasto", IdParticipante = 2, Coluna = 3, Linha = 2 });
+        Assert.Equal((1, true, "Lilica Lovejoy", 5), (enviado!.IdParticipante, enviado.Publico, enviado.Autor, enviado.IdMesa));
+
+        await CriarService().SinalizarAsync(lilica, new SinalMesaServiceModel { Tipo = "reacao", Emoji = "🔥" });
+        Assert.Equal(1, enviado.IdParticipante);
+
+        MesaAtiva(movimentoLivre: false);
+        Assert.Equal(BusinessErrors.MovimentoBloqueado.Code,
+            await CodigoAsync(() => CriarService().SinalizarAsync(lilica, new SinalMesaServiceModel { Tipo = "arrasto", Coluna = 1, Linha = 1 })));
     }
 }

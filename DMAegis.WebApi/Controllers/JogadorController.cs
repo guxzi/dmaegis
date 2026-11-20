@@ -27,11 +27,14 @@ public class JogadorController : ControllerBase
     private readonly IAntiforgery _antiforgery;
     private readonly IRolagemMesaService _rolagemService;
     private readonly IValidator<RolarRequestApiModel> _validatorRolar;
+    private readonly IValidator<SinalMesaRequestApiModel> _validatorSinal;
 
     public JogadorController(IJogadorService jogadorService, ICanalMesa canal,
         IValidator<MoverMinhaFichaRequestApiModel> validatorMover, IAntiforgery antiforgery,
-        IRolagemMesaService rolagemService, IValidator<RolarRequestApiModel> validatorRolar)
+        IRolagemMesaService rolagemService, IValidator<RolarRequestApiModel> validatorRolar,
+        IValidator<SinalMesaRequestApiModel> validatorSinal)
     {
+        _validatorSinal = validatorSinal;
         _rolagemService = rolagemService;
         _validatorRolar = validatorRolar;
         _jogadorService = jogadorService;
@@ -133,11 +136,19 @@ public class JogadorController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, ApiResponse<RolagemResponseApiModel>.Sucesso(rolagem.ParaResponse()));
     }
 
+    [HttpPost("api/jogador/sinais")]
+    public async Task<ActionResult<ApiResponse<object>>> Sinalizar([FromBody] SinalMesaRequestApiModel request)
+    {
+        await _validatorSinal.ValidarOuLancarAsync(request);
+        await _jogadorService.SinalizarAsync(User.ObterJogador(), request.ParaServiceModel());
+        return Ok(ApiResponse<object>.Sucesso(null!));
+    }
+
     [HttpGet("api/jogador/eventos")]
     public async Task<IResult> Eventos(CancellationToken cancelamento)
     {
         var jogador = User.ObterJogador();
         await _jogadorService.ConferirAcessoAsync(jogador);
-        return EventosMesa.Fluxo(_canal, jogador.IdCampanha, cancelamento);
+        return EventosMesa.Fluxo(_canal, jogador.IdCampanha, mestre: false, cancelamento);
     }
 }

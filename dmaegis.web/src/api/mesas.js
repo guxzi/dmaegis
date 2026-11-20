@@ -28,3 +28,6 @@ export const esconderTudo = (idMesa) => api.delete(`/mesas/${idMesa}/nevoa`).the
 // Rolagens da mesa (lado do mestre, inclusive as secretas).
 export const listarRolagens = (idMesa) => api.get(`/mesas/${idMesa}/rolagens`).then(dados);
 export const enviarRolagem = (idMesa, rolagem) => api.post(`/mesas/${idMesa}/rolagens`, rolagem).then(dados);
+
+// Sinal passageiro do mestre (ping, reação, arrasto ao vivo). Nada é gravado; erro é ignorado.
+export const enviarSinal = (idMesa, sinal) => api.post(`/mesas/${idMesa}/sinais`, sinal).then(dados);

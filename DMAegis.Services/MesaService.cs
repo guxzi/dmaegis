@@ -52,6 +52,7 @@ public class MesaServiceModel
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
     public bool Nevoa { get; set; }
+    public string? Clima { get; set; }
     public List<CelulaServiceModel> CelulasReveladas { get; set; } = [];
     public bool Ativa { get; set; }
     public bool EmCombate { get; set; }
@@ -72,6 +73,7 @@ public class SalvarMesaServiceModel
     public bool GradeVisivel { get; set; } = true;
     public bool MovimentoLivre { get; set; } = true;
     public bool Nevoa { get; set; }
+    public string? Clima { get; set; }
 }
 
 public class InserirParticipantesServiceModel
@@ -135,6 +137,7 @@ public class VisaoJogadorServiceModel
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
     public bool Nevoa { get; set; }
+    public string? Clima { get; set; }
     public List<CelulaServiceModel> CelulasReveladas { get; set; } = [];
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
@@ -168,6 +171,9 @@ public interface IMesaService
 
     /// <summary>Cobre a mesa inteira de novo.</summary>
     Task<MesaServiceModel> EsconderTudoAsync(int idUsuario, int idMesa);
+
+    /// <summary>Sinal passageiro do mestre (ping, reação ou arrasto ao vivo). Nada é gravado.</summary>
+    Task SinalizarAsync(int idUsuario, int idMesa, SinalMesaServiceModel sinal);
 
     /// <summary>
     /// Estado completo da mesa ativa da campanha, sem conferir dono: só para o JogadorService,
@@ -248,6 +254,7 @@ public class MesaService : IMesaService
             GradeVisivel = dados.GradeVisivel,
             MovimentoLivre = dados.MovimentoLivre,
             Nevoa = dados.Nevoa,
+            Clima = dados.Clima,
             Ativa = primeira,
             DataCriacao = agora,
             DataAtualizacao = agora,
@@ -269,6 +276,7 @@ public class MesaService : IMesaService
         mesa.GradeVisivel = dados.GradeVisivel;
         mesa.MovimentoLivre = dados.MovimentoLivre;
         mesa.Nevoa = dados.Nevoa;
+        mesa.Clima = dados.Clima;
         mesa.DataAtualizacao = Agora();
         await _mesaRepository.AtualizarAsync(mesa);
         return await AvisarEMontarAsync(mesa);
@@ -439,6 +447,7 @@ public class MesaService : IMesaService
             GradeVisivel = mesa.GradeVisivel,
             MovimentoLivre = mesa.MovimentoLivre,
             Nevoa = mesa.Nevoa,
+            Clima = mesa.Clima,
             CelulasReveladas = mesa.Nevoa ? [.. mesa.CelulasReveladas] : [],
             EmCombate = mesa.EmCombate,
             Rodada = mesa.Rodada,
@@ -506,6 +515,31 @@ public class MesaService : IMesaService
     }
 
     // ---------- Apoio ----------
+
+    // ---------- Sinais passageiros ----------
+
+    public async Task SinalizarAsync(int idUsuario, int idMesa, SinalMesaServiceModel sinal)
+    {
+        var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        sinal.Autor = "Mestre";
+        sinal.IdMesa = mesa.Id;
+        // Os jogadores só veem a mesa ativa: sinal de outra mesa fica com o mestre.
+        sinal.Publico = mesa.Ativa;
+        if (sinal.Tipo is RegrasMesa.SinalArrasto or RegrasMesa.SinalArrastoFim)
+        {
+            var participante = sinal.IdParticipante is int id ? await _participanteRepository.ObterAsync(id) : null;
+            if (participante is null || participante.IdMesa != mesa.Id)
+                throw new BusinessRuleException(BusinessErrors.ParticipanteNaoEncontrado);
+            // O arrasto ao vivo não pode entregar o que está escondido: ficha oculta nunca vai,
+            // e com névoa só a ficha de PJ (um monstro sob a névoa apareceria pelo movimento).
+            sinal.Publico = mesa.Ativa && participante.Visivel && (!mesa.Nevoa || participante.Jogador);
+        }
+        else
+        {
+            sinal.IdParticipante = null;
+        }
+        _canal.Sinalizar(mesa.IdCampanha, sinal);
+    }
 
     private async Task<List<ParticipanteMesa>> NovosJogadoresAsync(Mesa mesa, List<ParticipanteMesa> existentes)
     {
@@ -602,6 +636,7 @@ public class MesaService : IMesaService
             GradeVisivel = mesa.GradeVisivel,
             MovimentoLivre = mesa.MovimentoLivre,
             Nevoa = mesa.Nevoa,
+            Clima = mesa.Clima,
             CelulasReveladas = (await _celulaRepository.ListarPorMesaAsync(mesa.Id))
                 .Select(c => new CelulaServiceModel { Coluna = c.Coluna, Linha = c.Linha }).ToList(),
             Ativa = mesa.Ativa,

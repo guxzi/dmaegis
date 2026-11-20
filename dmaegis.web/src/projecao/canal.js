@@ -57,16 +57,20 @@ export const mostrarMesaNaProjecao = (idMesa) => enviar({ idMesa });
 // Avisa a projeção que a mesa mudou (ficha movida, turno, PV), para ela buscar o estado de novo.
 export const avisarMesaMudou = (idMesa) => postar({ mesaMudou: idMesa });
 
+// Repassa à projeção um sinal passageiro (ping, reação, arrasto) que os jogadores podem ver.
+export const avisarSinalNaProjecao = (sinal) => postar({ sinal });
+
 // Volta a projeção para a tela de espera.
 export const limparProjecao = () => enviar(null);
 
 // Avisa a cada imagem ou mesa nova. Devolve a função que para de ouvir.
-// `aoMudarMesa(idMesa)` recebe os avisos de mudança da mesa mostrada.
-export function ouvirProjecao(aoReceber, aoMudarMesa = () => {}) {
+// `aoMudarMesa(idMesa)` recebe os avisos de mudança da mesa mostrada; `aoSinal`, os sinais passageiros.
+export function ouvirProjecao(aoReceber, aoMudarMesa = () => {}, aoSinal = () => {}) {
   if (typeof BroadcastChannel === 'undefined') return () => {};
   const canal = new BroadcastChannel(NOME_CANAL);
   canal.onmessage = (evento) => {
     if (Number.isInteger(evento.data?.mesaMudou)) aoMudarMesa(evento.data.mesaMudou);
+    else if (evento.data?.sinal) aoSinal(evento.data.sinal);
     else aoReceber(normalizarProjecao(evento.data));
   };
   return () => canal.close();

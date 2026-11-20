@@ -1,14 +1,21 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { mensagemDeErro } from '../api/erros.js';
 import {
-  enviarRolagemDoJogador, listarRolagensDoJogador, moverMinhaFicha, obterJogador, obterMesaDoJogador, renovarCsrfJogador,
+  enviarRolagemDoJogador, enviarSinalDoJogador, listarRolagensDoJogador, moverMinhaFicha, obterJogador, obterMesaDoJogador, renovarCsrfJogador,
   URL_EVENTOS_JOGADOR, urlImagemDoJogador,
 } from '../api/jogador.js';
 import Emblema from '../componentes/Emblema.jsx';
 import { CLASSE_SAUDE, estadoSaude, fracaoPv } from '../mesa/combate.js';
-import { ouvirMesa } from '../mesa/eventos.js';
+import { limitarTaxa, REACOES } from '../mesa/efeitos.js';
+import { ID_TELA, ouvirMesa } from '../mesa/eventos.js';
 import PainelRolagens from '../mesa/PainelRolagens.jsx';
+import RolagensNaMesa from '../mesa/RolagensNaMesa.jsx';
+import { useSinaisMesa } from '../mesa/useEfeitos.js';
+import { useRolagens } from '../mesa/useRolagens.js';
 import VisaoJogador from '../mesa/VisaoJogador.jsx';
+
+// Uma reação por vez a cada esse tempo, para ninguém encher a tela dos outros.
+const INTERVALO_REACOES = 700;
 
 function Espera({ titulo, texto }) {
   return (
@@ -58,6 +65,15 @@ export default function Jogar() {
   const [aviso, setAviso] = useState('');
   const [versao, setVersao] = useState(0);
   const [dadosAbertos, setDadosAbertos] = useState(false);
+  const [reacoesAbertas, setReacoesAbertas] = useState(false);
+  const ultimaReacao = useRef(0);
+  const rolagens = useRolagens(listarRolagensDoJogador, versao);
+  const idMesa = visao?.idMesa ?? null;
+  const sinais = useSinaisMesa(idMesa);
+  const receberSinal = useRef(sinais.receber);
+  useEffect(() => {
+    receberSinal.current = sinais.receber;
+  }, [sinais.receber]);
 
   const carregar = useCallback(async () => {
     setVersao((v) => v + 1);
@@ -84,7 +100,7 @@ export default function Jogar() {
 
   useEffect(() => {
     if (!jogador) return undefined;
-    return ouvirMesa(URL_EVENTOS_JOGADOR, carregar, setConectado);
+    return ouvirMesa(URL_EVENTOS_JOGADOR, carregar, setConectado, (sinal) => receberSinal.current(sinal));
   }, [jogador, carregar]);
 
   useEffect(() => {
@@ -92,6 +108,41 @@ export default function Jogar() {
     const t = setTimeout(() => setAviso(''), 3000);
     return () => clearTimeout(t);
   }, [aviso]);
+
+  // O vibrar avisa no celular quando chega a vez do jogador.
+  const minhaVez = Boolean(visao?.emCombate && visao.participantes.some((p) => p.ehMinha && p.id === visao.idParticipanteVez));
+  useEffect(() => {
+    if (minhaVez) navigator.vibrate?.([120, 60, 120]);
+  }, [minhaVez]);
+
+  const nomeAutor = jogador?.nomePersonagem ?? '';
+  const pingar = useCallback(({ coluna, linha }) => {
+    if (!idMesa) return;
+    const sinal = { tipo: 'ping', coluna, linha, origem: ID_TELA };
+    sinais.receber({ ...sinal, autor: nomeAutor, idMesa });
+    enviarSinalDoJogador(sinal).catch(() => {});
+  }, [idMesa, nomeAutor, sinais]);
+
+  const envioArrasto = useMemo(() => limitarTaxa((sinal) => enviarSinalDoJogador(sinal).catch(() => {}), 90), []);
+  useEffect(() => () => envioArrasto.cancelar(), [envioArrasto]);
+  const arrastar = useCallback((ficha, posicao, terminou) => {
+    const sinal = { tipo: terminou ? 'arrasto-fim' : 'arrasto', coluna: posicao?.coluna ?? null, linha: posicao?.linha ?? null, origem: ID_TELA };
+    if (!terminou) {
+      envioArrasto.chamar(sinal);
+      return;
+    }
+    envioArrasto.cancelar();
+    enviarSinalDoJogador(sinal).catch(() => {});
+  }, [envioArrasto]);
+
+  function reagir(emoji) {
+    const agora = Date.now();
+    if (agora - ultimaReacao.current < INTERVALO_REACOES) return;
+    ultimaReacao.current = agora;
+    const minhaFicha = visao?.participantes.find((p) => p.ehMinha && p.coluna != null);
+    sinais.receber({ tipo: 'reacao', emoji, idParticipante: minhaFicha?.id ?? null, autor: nomeAutor, idMesa, origem: ID_TELA });
+    enviarSinalDoJogador({ tipo: 'reacao', emoji, origem: ID_TELA }).catch(() => {});
+  }
 
   async function mover(ficha, coluna, linha) {
     setVisao((v) => v && ({ ...v, participantes: v.participantes.map((p) => (p.id === ficha.id ? { ...p, coluna, linha } : p)) }));
@@ -115,13 +166,26 @@ export default function Jogar() {
   return (
     <main className="tela-jogador">
       <VisaoJogador visao={visao} urlImagem={urlImagemDoJogador}
-        podeArrastar={(ficha) => ficha.ehMinha && visao.movimentoLivre} aoMover={mover} />
+        podeArrastar={(ficha) => ficha.ehMinha && visao.movimentoLivre} aoMover={mover}
+        sinais={sinais} aoPing={pingar} aoArrastar={arrastar} />
+      <RolagensNaMesa novas={rolagens.novas} aoDispensar={rolagens.dispensar} />
       <div className="marca-jogador" aria-hidden="true">
         <Emblema tamanho={26} />
         <span>{jogador.nomeCampanha}</span>
       </div>
       {minha && <MinhaFicha ficha={minha} />}
-      <button type="button" className="botao-dados-jogador" aria-expanded={dadosAbertos} onClick={() => setDadosAbertos((v) => !v)}
+      <button type="button" className="botao-reacoes-jogador" aria-expanded={reacoesAbertas}
+        onClick={() => { setReacoesAbertas((v) => !v); setDadosAbertos(false); }} title="Reagir (todos veem)" aria-label="Reações">
+        <span aria-hidden="true">✨</span>
+      </button>
+      {reacoesAbertas && (
+        <div className="barra-reacoes" role="group" aria-label="Reações" onPointerDown={(e) => e.stopPropagation()}>
+          {REACOES.map((emoji) => (
+            <button key={emoji} type="button" onClick={() => reagir(emoji)} aria-label={`Reagir com ${emoji}`}>{emoji}</button>
+          ))}
+        </div>
+      )}
+      <button type="button" className="botao-dados-jogador" aria-expanded={dadosAbertos} onClick={() => { setDadosAbertos((v) => !v); setReacoesAbertas(false); }}
         title="Rolar dados para a mesa" aria-label="Dados">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
           <path d="M12 2 21 7v10l-9 5-9-5V7z" /><path d="M12 22V12M21 7l-9 5-9-5" />
@@ -133,7 +197,7 @@ export default function Jogar() {
             <strong className="flex-grow-1">Dados da mesa</strong>
             <button type="button" className="btn-close btn-close-white btn-sm" onClick={() => setDadosAbertos(false)} aria-label="Fechar dados" />
           </div>
-          <PainelRolagens versao={versao} listar={listarRolagensDoJogador} enviar={enviarRolagemDoJogador} compacto />
+          <PainelRolagens rolagens={rolagens.rolagens} enviar={enviarRolagemDoJogador} aoEnviada={rolagens.adicionar} compacto />
         </div>
       )}
       {!conectado && <div className="aviso-conexao" role="status">Reconectando à mesa…</div>}

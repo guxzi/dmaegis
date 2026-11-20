@@ -10,6 +10,18 @@ public static class RegrasMesa
     public const string Sangrando = "Sangrando";
     public const string Caido = "Caído";
 
+    /// <summary>Climas que a mesa pode mostrar por cima do mapa (nulo = nenhum).</summary>
+    public static readonly string[] Climas = ["chuva", "neve", "neblina", "brasas"];
+
+    /// <summary>Reações rápidas dos jogadores (sobem flutuando da ficha de quem reagiu).</summary>
+    public static readonly string[] Reacoes = ["😱", "🔥", "⭐", "💀", "😂", "👏", "❤️", "🎲"];
+
+    public const string SinalPing = "ping";
+    public const string SinalReacao = "reacao";
+    public const string SinalArrasto = "arrasto";
+    public const string SinalArrastoFim = "arrasto-fim";
+    public static readonly string[] TiposSinal = [SinalPing, SinalReacao, SinalArrasto, SinalArrastoFim];
+
     /// <summary>
     /// Ordem do combate: iniciativa maior primeiro (sem iniciativa vai para o fim),
     /// desempate pelo bônus, depois pela ordem manual e pelo id.

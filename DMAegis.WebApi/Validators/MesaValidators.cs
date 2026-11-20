@@ -1,3 +1,4 @@
+using DMAegis.Services;
 using DMAegis.WebApi.ApiModels.Mesas;
 using FluentValidation;
 
@@ -27,6 +28,26 @@ public class SalvarMesaValidator : AbstractValidator<SalvarMesaRequestApiModel>
             .WithMessage("O deslocamento da grade está fora da faixa.");
         RuleFor(x => x.DeslocamentoY).InclusiveBetween(-RegrasMesaApi.DeslocamentoMaximo, RegrasMesaApi.DeslocamentoMaximo)
             .WithMessage("O deslocamento da grade está fora da faixa.");
+        RuleFor(x => x.Clima).Must(c => string.IsNullOrWhiteSpace(c) || RegrasMesa.Climas.Contains(c))
+            .WithMessage("Clima desconhecido.");
+    }
+}
+
+public class SinalMesaValidator : AbstractValidator<SinalMesaRequestApiModel>
+{
+    public SinalMesaValidator()
+    {
+        RuleFor(x => x.Tipo).Must(t => t is not null && RegrasMesa.TiposSinal.Contains(t)).WithMessage("Sinal desconhecido.");
+        When(x => x.Tipo is RegrasMesa.SinalPing or RegrasMesa.SinalArrasto, () =>
+        {
+            RuleFor(x => x.Coluna).NotNull().WithMessage("Informe a posição.");
+            RuleFor(x => x.Linha).NotNull().WithMessage("Informe a posição.");
+        });
+        RuleFor(x => x.Coluna).InclusiveBetween(-10, RegrasMesaApi.PosicaoMaxima).When(x => x.Coluna.HasValue).WithMessage("Posição fora do mapa.");
+        RuleFor(x => x.Linha).InclusiveBetween(-10, RegrasMesaApi.PosicaoMaxima).When(x => x.Linha.HasValue).WithMessage("Posição fora do mapa.");
+        When(x => x.Tipo == RegrasMesa.SinalReacao, () =>
+            RuleFor(x => x.Emoji).Must(e => e is not null && RegrasMesa.Reacoes.Contains(e)).WithMessage("Reação desconhecida."));
+        RuleFor(x => x.Origem).TamanhoAte(40, "A origem do sinal");
     }
 }
 

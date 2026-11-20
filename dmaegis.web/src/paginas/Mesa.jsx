@@ -5,7 +5,7 @@ import { mensagemDeErro } from '../api/erros.js';
 import { listarImagensDaCampanha, urlDaImagem } from '../api/imagens.js';
 import {
   adicionarFichas, alterarNevoa, ativarMesa, criarMesa, encerrarCombate, esconderTudo, excluirFicha, excluirMesa,
-  enviarRolagem, iniciarCombate, listarMesas, listarRolagens, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
+  enviarRolagem, enviarSinal, iniciarCombate, listarMesas, listarRolagens, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
 } from '../api/mesas.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
@@ -23,10 +23,14 @@ import ListaIniciativa from '../mesa/ListaIniciativa.jsx';
 import PainelFicha from '../mesa/PainelFicha.jsx';
 import PalcoMapa from '../mesa/PalcoMapa.jsx';
 import { urlEventosDaMesa } from '../api/jogador.js';
-import { ouvirMesa } from '../mesa/eventos.js';
+import { CLIMAS, limitarTaxa } from '../mesa/efeitos.js';
+import { ID_TELA, ouvirMesa } from '../mesa/eventos.js';
+import RolagensNaMesa from '../mesa/RolagensNaMesa.jsx';
+import { useSinaisMesa } from '../mesa/useEfeitos.js';
+import { useRolagens } from '../mesa/useRolagens.js';
 import PainelJogadores from '../mesa/PainelJogadores.jsx';
 import PainelRolagens from '../mesa/PainelRolagens.jsx';
-import { abrirProjecao, avisarMesaMudou, mostrarMesaNaProjecao } from '../projecao/canal.js';
+import { abrirProjecao, avisarMesaMudou, avisarSinalNaProjecao, mostrarMesaNaProjecao } from '../projecao/canal.js';
 
 const GRADE_PADRAO = { tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 0, gradeVisivel: true };
 
@@ -41,7 +45,25 @@ function corpoDaMesa(mesa, mudancas = {}) {
     gradeVisivel: m.gradeVisivel,
     movimentoLivre: m.movimentoLivre ?? true,
     nevoa: m.nevoa ?? false,
+    clima: m.clima ?? null,
   };
+}
+
+// Clima por cima do mapa (os jogadores também veem).
+function AjusteClima({ clima, aoEscolher, aoFechar }) {
+  return (
+    <div className="ajuste-clima cartao-astral" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="d-flex align-items-center mb-2">
+        <strong className="flex-grow-1">Clima</strong>
+        <button type="button" className="btn-close btn-close-white btn-sm" onClick={aoFechar} aria-label="Fechar clima" />
+      </div>
+      <div className="segmentado" role="group" aria-label="Clima">
+        {CLIMAS.map((c) => (
+          <button key={c.rotulo} type="button" aria-pressed={(clima ?? null) === c.id} onClick={() => aoEscolher(c.id)}>{c.rotulo}</button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Ajuste da grade com prévia ao vivo: os controles mudam a mesa na hora e salvam ao soltar.
@@ -90,6 +112,7 @@ export default function Mesa() {
   const [excluindo, setExcluindo] = useState(null);
   const [renomeando, setRenomeando] = useState(false);
   const [vendoJogadores, setVendoJogadores] = useState(false);
+  const [escolhendoClima, setEscolhendoClima] = useState(false);
   // Com o painel da névoa aberto, o palco pinta em vez de mover a vista.
   const [pincel, setPincel] = useState(null);
   const [limitesGrade, setLimitesGrade] = useState(null);
@@ -105,9 +128,16 @@ export default function Mesa() {
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
   const fecharJogadores = useCallback(() => setVendoJogadores(false), []);
   const podeDesfazer = tamanhoHistorico.idMesa === idMesa && tamanhoHistorico.n > 0;
-  const listarRolagensDaMesa = useCallback(() => listarRolagens(idMesa), [idMesa]);
+  const listarRolagensDaMesa = useCallback(() => (idMesa ? listarRolagens(idMesa) : Promise.resolve([])), [idMesa]);
   const enviarRolagemDaMesa = useCallback((rolagem) => enviarRolagem(idMesa, rolagem), [idMesa]);
   const condicoes = useMemo(() => condicoesDoSistema(campanha?.idSistema), [campanha?.idSistema]);
+  const rolagens = useRolagens(listarRolagensDaMesa, versaoMesa);
+  // Pings, reações e arrastos ao vivo (os dos jogadores chegam pelo fluxo da mesa).
+  const sinais = useSinaisMesa(idMesa);
+  const receberSinal = useRef(sinais.receber);
+  useEffect(() => {
+    receberSinal.current = sinais.receber;
+  }, [sinais.receber]);
 
   useEffect(() => {
     listarMesas(id).then(setMesas).catch((e) => setErro(mensagemDeErro(e)));
@@ -133,8 +163,45 @@ export default function Mesa() {
         setMesa(m);
         avisarMesaMudou(m.id);
       }).catch(() => {});
+    }, undefined, (sinal) => {
+      receberSinal.current(sinal);
+      // O que os jogadores podem ver também vai para a janela de projeção.
+      if (sinal.publico) avisarSinalNaProjecao(sinal);
     });
   }, [id, idMesa]);
+
+  // Ping do mestre: aparece aqui na hora e vai para os jogadores e para a projeção.
+  const pingar = useCallback(({ coluna, linha }) => {
+    if (!idMesa) return;
+    const sinal = { tipo: 'ping', coluna, linha, origem: ID_TELA };
+    const completo = { ...sinal, autor: 'Mestre', idMesa };
+    sinais.receber(completo);
+    avisarSinalNaProjecao(completo);
+    enviarSinal(idMesa, sinal).catch(() => {});
+  }, [idMesa, sinais]);
+
+  // Arrasto ao vivo: no máximo ~11 avisos por segundo; ao soltar, avisa a célula final na hora.
+  const envioArrasto = useMemo(() => limitarTaxa((sinal, publico) => {
+    enviarSinal(sinal.idMesa, sinal).catch(() => {});
+    if (publico) avisarSinalNaProjecao({ ...sinal, autor: 'Mestre' });
+  }, 90), []);
+  useEffect(() => () => envioArrasto.cancelar(), [envioArrasto]);
+  const arrastar = useCallback((ficha, posicao, terminou) => {
+    if (!idMesa || !mesa) return;
+    // Mesma regra do servidor: ficha oculta, ou monstro com a névoa ligada, não vai para a projeção.
+    const publico = ficha.visivel !== false && (!mesa.nevoa || ficha.jogador);
+    const sinal = {
+      tipo: terminou ? 'arrasto-fim' : 'arrasto', idParticipante: ficha.id, coluna: posicao?.coluna ?? null, linha: posicao?.linha ?? null,
+      origem: ID_TELA, idMesa,
+    };
+    if (!terminou) {
+      envioArrasto.chamar(sinal, publico);
+      return;
+    }
+    envioArrasto.cancelar();
+    enviarSinal(idMesa, sinal).catch(() => {});
+    if (publico) avisarSinalNaProjecao({ ...sinal, autor: 'Mestre' });
+  }, [idMesa, mesa, envioArrasto]);
 
   // Toda resposta da API traz a mesa inteira: atualiza a tela e avisa a projeção.
   const aplicar = useCallback((nova) => {
@@ -347,9 +414,12 @@ export default function Mesa() {
                 {imagemAtual ? `Mapa: ${imagemAtual.titulo}` : 'Escolher mapa'}
               </button>
               <button type="button" className="btn btn-sm btn-fantasma" aria-pressed={ajustandoGrade}
-                onClick={() => { setAjustandoGrade((v) => !v); setPincel(null); }}>Grade</button>
+                onClick={() => { setAjustandoGrade((v) => !v); setPincel(null); setEscolhendoClima(false); }}>Grade</button>
+              <button type="button" className={`btn btn-sm btn-fantasma${mesa.clima ? ' com-nevoa' : ''}`} aria-pressed={escolhendoClima}
+                onClick={() => { setEscolhendoClima((v) => !v); setAjustandoGrade(false); setPincel(null); }}
+                title="Chuva, neve, neblina ou brasas por cima do mapa">Clima</button>
               <button type="button" className={`btn btn-sm btn-fantasma${mesa.nevoa ? ' com-nevoa' : ''}`} aria-pressed={Boolean(pincel)}
-                onClick={() => { setPincel((p) => (p ? null : { modo: 'revelar', tamanho: 3 })); setAjustandoGrade(false); }}
+                onClick={() => { setPincel((p) => (p ? null : { modo: 'revelar', tamanho: 3 })); setAjustandoGrade(false); setEscolhendoClima(false); }}
                 title="Névoa de guerra: revele o mapa aos poucos">Névoa</button>
               {mesa.ativa
                 ? <span className="selo-ativa" title="É a mesa que os jogadores veem">◉ Ativa</span>
@@ -387,7 +457,8 @@ export default function Mesa() {
             <div className="mesa-palco-coluna">
               <PalcoMapa mesa={mesa} urlImagem={urlDaImagem} modo="mestre" podeArrastar={() => true}
                 aoMover={moverNoMapa} idSelecionada={idSelecionada} aoSelecionar={setIdSelecionada}
-                pincel={pincel} aoPintarNevoa={pintarNevoa} aoMedirGrade={setLimitesGrade}>
+                pincel={pincel} aoPintarNevoa={pintarNevoa} aoMedirGrade={setLimitesGrade}
+                pings={sinais.pings} reacoes={sinais.reacoes} arrastosRemotos={sinais.arrastos} aoPing={pingar} aoArrastar={arrastar}>
                 {ajustandoGrade && (
                   <AjusteGrade mesa={mesa} aoMudar={(m) => setMesa((atual) => ({ ...atual, ...m }))}
                     aoSalvar={salvarGrade} aoFechar={() => setAjustandoGrade(false)} />
@@ -398,6 +469,11 @@ export default function Mesa() {
                     aoRevelarTudo={revelarTudo} aoEsconderTudo={() => executar(() => esconderTudo(mesa.id))}
                     aoFechar={() => setPincel(null)} />
                 )}
+                {escolhendoClima && (
+                  <AjusteClima clima={mesa.clima} aoFechar={() => setEscolhendoClima(false)}
+                    aoEscolher={(clima) => executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, { clima })))} />
+                )}
+                <RolagensNaMesa novas={rolagens.novas} aoDispensar={rolagens.dispensar} />
                 {avisoDesfazer && <div className="aviso-desfeito" role="status">{avisoDesfazer}</div>}
                 {mesa.emCombate && daVez && (
                   <div className="faixa-vez" key={daVez.id}>
@@ -445,8 +521,8 @@ export default function Mesa() {
 
                 <div className="divisor-estelar my-3" />
                 <p className="rotulo-painel">Rolagens da mesa</p>
-                <PainelRolagens key={mesa.id} versao={versaoMesa} comSecreta
-                  listar={listarRolagensDaMesa} enviar={enviarRolagemDaMesa} />
+                <PainelRolagens key={mesa.id} comSecreta rolagens={rolagens.rolagens}
+                  enviar={enviarRolagemDaMesa} aoEnviada={rolagens.adicionar} />
 
                 <div className="divisor-estelar my-3" />
                 <AdicionarFichas registros={registros} rotulo={rotulo} ocupado={ocupado}

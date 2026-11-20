@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { mensagemDeErro } from '../api/erros.js';
 import { ErroNotacao } from '../dados/notacao.js';
 import { expressaoRapida, formatarRolagem, rolar } from '../dados/rolar.js';
+import { criticoDaRolagem } from './efeitos.js';
 
 const RAPIDOS = [
   { id: 'd20', rotulo: 'd20' },
@@ -18,19 +19,12 @@ function hora(data) {
 }
 
 // Rolagens da mesa: o dado rola no navegador e o resultado vai para todos (o mestre pode rolar em segredo).
-// `versao` muda a cada aviso da mesa, e aí a lista é buscada de novo.
-export default function PainelRolagens({ listar, enviar, versao, comSecreta = false, compacto = false }) {
-  const [rolagens, setRolagens] = useState([]);
+// A lista vem da página (useRolagens), que também mostra o dado animado em cima do mapa.
+export default function PainelRolagens({ rolagens, enviar, aoEnviada, comSecreta = false, compacto = false }) {
   const [expressao, setExpressao] = useState('1d20');
   const [modificador, setModificador] = useState(0);
   const [secreta, setSecreta] = useState(false);
   const [erro, setErro] = useState('');
-
-  const carregar = useCallback(() => listar().then(setRolagens).catch(() => {}), [listar]);
-
-  useEffect(() => {
-    carregar();
-  }, [carregar, versao]);
 
   async function fazer(texto) {
     setErro('');
@@ -45,7 +39,7 @@ export default function PainelRolagens({ listar, enviar, versao, comSecreta = fa
       const nova = await enviar({
         expressao: resultado.expressao, total: resultado.total, detalhe: formatarRolagem(resultado), secreta: comSecreta && secreta,
       });
-      setRolagens((lista) => [nova, ...lista.filter((r) => r.id !== nova.id)].slice(0, 30));
+      aoEnviada(nova);
     } catch (e) {
       setErro(mensagemDeErro(e));
     }
@@ -74,8 +68,10 @@ export default function PainelRolagens({ listar, enviar, versao, comSecreta = fa
       {erro && <p className="small text-danger mb-2">{erro}</p>}
       <ol className="lista-rolagens">
         {rolagens.length === 0 && <li className="text-secondary small">Nenhuma rolagem ainda.</li>}
-        {rolagens.map((r) => (
-          <li key={r.id} className={[r.mestre && 'do-mestre', r.secreta && 'secreta'].filter(Boolean).join(' ')}>
+        {rolagens.map((r) => {
+          const critico = criticoDaRolagem(r.expressao, r.detalhe);
+          return (
+          <li key={r.id} className={[r.mestre && 'do-mestre', r.secreta && 'secreta', critico && `rolagem-${critico}`].filter(Boolean).join(' ')}>
             <span className="rolagem-total">{r.total}</span>
             <span className="rolagem-corpo">
               <span className="rolagem-autor">{r.autor}{r.secreta && <span className="linha-etiqueta ms-1">secreta</span>}</span>
@@ -83,7 +79,8 @@ export default function PainelRolagens({ listar, enviar, versao, comSecreta = fa
             </span>
             <span className="rolagem-hora">{hora(r.data)}</span>
           </li>
-        ))}
+          );
+        })}
       </ol>
     </section>
   );

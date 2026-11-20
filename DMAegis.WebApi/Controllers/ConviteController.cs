@@ -56,6 +56,6 @@ public class ConviteController : ControllerBase
     public async Task<IResult> Eventos(int idCampanha, CancellationToken cancelamento)
     {
         await _campanhaService.ObterDoUsuarioOuLancarAsync(User.ObterIdUsuario(), idCampanha);
-        return EventosMesa.Fluxo(_canal, idCampanha, cancelamento);
+        return EventosMesa.Fluxo(_canal, idCampanha, mestre: true, cancelamento);
     }
 }

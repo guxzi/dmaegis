@@ -10,6 +10,7 @@ public class SalvarMesaRequestApiModel
     public bool GradeVisivel { get; set; } = true;
     public bool MovimentoLivre { get; set; } = true;
     public bool Nevoa { get; set; }
+    public string? Clima { get; set; }
 }
 
 /// <summary>Todos os PJs, um registro do caderno (com quantidade) ou uma ficha avulsa (só nome).</summary>
@@ -95,6 +96,7 @@ public class MesaResponseApiModel
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
     public bool Nevoa { get; set; }
+    public string? Clima { get; set; }
     public List<CelulaApiModel> CelulasReveladas { get; set; } = [];
     public bool Ativa { get; set; }
     public bool EmCombate { get; set; }
@@ -132,6 +134,7 @@ public class VisaoJogadorResponseApiModel
     public bool GradeVisivel { get; set; }
     public bool MovimentoLivre { get; set; }
     public bool Nevoa { get; set; }
+    public string? Clima { get; set; }
     public List<CelulaApiModel> CelulasReveladas { get; set; } = [];
     public bool EmCombate { get; set; }
     public int Rodada { get; set; }
@@ -150,4 +153,15 @@ public class AlterarNevoaRequestApiModel
 {
     public List<CelulaApiModel> Revelar { get; set; } = [];
     public List<CelulaApiModel> Esconder { get; set; } = [];
+}
+
+/// <summary>Sinal passageiro da mesa (ping, reação ou arrasto ao vivo). Coluna e linha podem ter fração no arrasto.</summary>
+public class SinalMesaRequestApiModel
+{
+    public string? Tipo { get; set; }
+    public double? Coluna { get; set; }
+    public double? Linha { get; set; }
+    public int? IdParticipante { get; set; }
+    public string? Emoji { get; set; }
+    public string? Origem { get; set; }
 }
