@@ -24,7 +24,19 @@ Durante o jogo, o escudo mostra a cena atual, os segredos revelados e quem está
 
 A mesa virtual coloca um mapa da galeria com grade, fichas redondas com retrato (ou a inicial, enquanto o personagem não tem imagem) e o combate ao lado: iniciativa, turno e rodada, dano e cura, condições e fichas escondidas. Com o pincel da névoa de guerra eu revelo o mapa aos poucos, e a régua (tecla R) mede a distância em quadrados e metros. Errou um clique? Ctrl+Z desfaz.
 
-Cada jogador recebe um link, abre a mesa no navegador (no celular também, com zoom de dois dedos) e move a própria ficha, tudo em tempo real. As rolagens de dados feitas na mesa aparecem para todos; eu ainda posso rolar em segredo. Ele só vê o que deve: PV de monstro, ficha escondida, monstro na névoa, anotações e segredos ficam comigo. Também dá para mandar qualquer imagem para uma janela de projeção, copiar ou baixar.
+Cada jogador recebe um link, abre a mesa no navegador (no celular também, com zoom de dois dedos) e move a própria ficha, tudo em tempo real. Ele só vê o que deve: PV de monstro, ficha escondida, monstro na névoa, anotações e segredos ficam comigo. Também dá para mandar qualquer imagem para uma janela de projeção, copiar ou baixar.
+
+O que acontece na mesa aparece para todo mundo, e com movimento:
+
+- Dano e cura sobem da ficha como números ("−12", "+5"), e a ficha treme no golpe e fica cinza quando cai. Quem não vê o PV do monstro vê só o golpe.
+- Quando o turno passa, uma faixa atravessa a tela com o nome de quem joga, e uma luz acompanha a ficha da vez. O combate começa com estrelas em disparada.
+- Os dados giram num cartão em cima do mapa antes de mostrar o número. O 20 natural brilha em dourado e o 1 natural racha. Posso rolar em segredo.
+- Alt + clique (ou segurar o dedo no mapa) solta um ping com o nome de quem apontou. Os jogadores reagem com emojis que sobem da ficha deles, e quem está olhando vê a ficha andando enquanto outra pessoa arrasta.
+- A névoa se abre com poeira de estrelas, e eu posso ligar chuva, neve, neblina ou brasas por cima do mapa.
+
+Para os jogadores, eu entrego cartas, retratos de NPC e mapas achados (texto, imagem ou os dois), para todos ou para um só, e o cartão abre na tela deles. Cada jogador envia o retrato do próprio personagem tocando na foto da ficha. No começo do combate eu peço iniciativa, eles rolam na tela deles e o valor já entra na ordem.
+
+Depois da sessão, o botão Resumo monta um rascunho com os combates, quem caiu, os críticos e as entregas, e eu acrescento ao resumo da sessão no caderno.
 
 O visual é de magia cósmica: espaço profundo, cobalto e violeta, estrelas que se movem a cada página e uma faísca de luz no clique. As animações desligam quando o sistema pede menos movimento.
 
@@ -35,7 +47,7 @@ O visual é de magia cósmica: espaço profundo, cobalto e violeta, estrelas que
 | API | .NET 10 (ASP.NET Core com controllers), Dapper com MySqlConnector, FluentValidation, DotNetEnv |
 | Banco | MySQL 8 |
 | Site | React, Vite, Bootstrap, React Router e Axios, em JavaScript |
-| Testes | xUnit v3 e Moq na API, Vitest no site |
+| Testes | xUnit v3 e Moq na API, Vitest no site, Playwright de ponta a ponta |
 
 A API é dividida em Controller, Service e Repository, e sempre responde com o envelope `{ responseCode, data, errorMessage }`. O login usa cookie `HttpOnly` e `SameSite=Strict` com proteção CSRF, a senha fica só como hash e há limite de tentativas. Toda rota confere se a campanha é de quem está logado. As regras que sigo no código estão em [`docs/CONVENCOES.md`](docs/CONVENCOES.md).
 
@@ -43,7 +55,7 @@ A API é dividida em Controller, Service e Repository, e sempre responde com o e
 
 Precisa do [.NET 10 SDK](https://dotnet.microsoft.com/download), do [Node.js](https://nodejs.org) e do MySQL 8.
 
-1. Rode os scripts de `database/` em ordem, do `01` ao `10`. O `04` cria um usuário de teste: `mestre@dmaegis.test`, senha `dmaegis-teste`.
+1. Rode os scripts de `database/` em ordem, do `01` ao `13`. O `04` cria um usuário de teste: `mestre@dmaegis.test`, senha `dmaegis-teste`.
 2. Copie o `.env.example` para `.env` na raiz e troque `SUA_SENHA` pela senha do seu MySQL. O `.env` não vai para o git.
 3. Instale as dependências do site:
 
@@ -87,6 +99,8 @@ Tudo fica no MySQL do meu PC, inclusive as imagens. Para não perder o preparo, 
 mysql -u root -p < "caminho do arquivo .sql"
 ```
 
+Ficam os 8 backups mais recentes; os mais velhos são apagados. Para não depender de lembrar, `Agendar backup semanal.cmd` coloca o backup no Agendador de Tarefas do Windows, todo domingo ao meio-dia (ou assim que o PC ligar, se estiver desligado nessa hora). O resultado do último fica em `ultimo-backup.txt`, na mesma pasta.
+
 ## Testes
 
 ```bash
@@ -95,6 +109,16 @@ dotnet test
 
 ```bash
 npm --prefix dmaegis.web test
+```
+
+E um teste de ponta a ponta, com o navegador de verdade: ele entra como mestre e como jogador na campanha de exemplo e confere o tempo real entre os dois (ping, dano, reação, entrega, iniciativa e combate). Precisa da API rodando e do banco com os dados de exemplo, e apaga tudo o que criou no fim. Na primeira vez, instale o navegador do Playwright:
+
+```bash
+npx --prefix dmaegis.web playwright install chromium
+```
+
+```bash
+npm --prefix dmaegis.web run e2e
 ```
 
 ## Documentação
@@ -107,7 +131,7 @@ npm --prefix dmaegis.web test
 
 ## O que vem depois
 
-Tabelas aleatórias e oráculo, montar encontros no D&D, o contador de Medo e os dados de dualidade no Daggerheart, layout configurável e uso offline. A lista completa está no [roteiro](docs/ROTEIRO.md#8-roteiro-em-etapas).
+Tabelas aleatórias, montar encontros no D&D, o contador de Medo e os dados de dualidade no Daggerheart, layout configurável e uso offline. A lista completa está no [roteiro](docs/ROTEIRO.md#8-roteiro-em-etapas).
 
 ## Licenças e créditos
 

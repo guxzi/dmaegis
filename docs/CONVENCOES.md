@@ -6,7 +6,7 @@ Se este arquivo e o design de uma fase (`docs/design/`) discordarem, vale o desi
 
 ## Stack
 
-.NET 10 com ASP.NET Core e controllers, Dapper com MySqlConnector, MySQL 8, FluentValidation, DotNetEnv, e xUnit v3 com Moq nos testes. No front, React com Vite, Bootstrap, Axios e React Router, em JavaScript, testado com Vitest.
+.NET 10 com ASP.NET Core e controllers, Dapper com MySqlConnector, MySQL 8, FluentValidation, DotNetEnv, e xUnit v3 com Moq nos testes. No front, React com Vite, Bootstrap, Axios e React Router, em JavaScript, testado com Vitest. Os testes de ponta a ponta usam Playwright (`dmaegis.web/e2e`, arquivos `*.e2e.js`).
 
 Não uso Entity Framework, AutoMapper, JWT, TypeScript nem Tailwind. Pacote novo só entra com motivo.
 

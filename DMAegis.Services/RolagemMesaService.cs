@@ -112,6 +112,9 @@ public class RolagemMesaService : IRolagemMesaService
         await _participanteRepository.AtualizarIniciativaAsync(minha.Id, dados.Total);
         var expressao = dados.Expressao.Trim();
         dados.Expressao = expressao.Length > 186 ? expressao[..186] : $"{expressao} (iniciativa)";
+        // O painel de rolagens mostra o detalhe: ele também diz que é iniciativa.
+        var detalhe = $"Iniciativa: {dados.Detalhe.Trim()}";
+        dados.Detalhe = detalhe.Length > 500 ? detalhe[..500] : detalhe;
         return await GravarAsync(mesa, jogador.NomePersonagem, mestre: false, dados, secreta: false);
     }
 

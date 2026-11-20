@@ -94,6 +94,7 @@ public class RolagemMesaServiceTests
 
         _participantes.Verify(p => p.AtualizarIniciativaAsync(1, 17), Times.Once);
         Assert.Equal("1d20+2 (iniciativa)", gravada!.Expressao);
+        Assert.Equal("Iniciativa: 1d20+2 → (15) + 2 = 17", gravada.Detalhe);
         Assert.False(rolagem.Secreta);
 
         _mesas.Setup(m => m.ObterAtivaAsync(10)).ReturnsAsync(new Mesa { Id = 5, IdCampanha = 10, EmCombate = true });
