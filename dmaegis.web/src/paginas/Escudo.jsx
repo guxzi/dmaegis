@@ -13,6 +13,7 @@ import { sessaoPadrao } from '../escudo/atalhos.js';
 import CartaoRegistro from '../escudo/CartaoRegistro.jsx';
 import PainelAnotacoes from '../escudo/PainelAnotacoes.jsx';
 import PainelRegras from '../escudo/PainelRegras.jsx';
+import PainelImproviso from '../improviso/PainelImproviso.jsx';
 import PainelSessao from '../escudo/PainelSessao.jsx';
 import { retratosPorRegistro } from '../imagens/retratos.js';
 import { abrirProjecao } from '../projecao/canal.js';
@@ -138,11 +139,13 @@ export default function Escudo() {
             <div className="col-lg-5 d-flex flex-column gap-3" style={{ height: ALTURA_PAINEIS }}>
               <div className="card painel-escudo flex-grow-1" style={{ minHeight: 0 }}>
                 <div className="card-header">
-                  <div className="abas-escudo" role="tablist" aria-label="Anotações ou regras">
+                  <div className="abas-escudo" role="tablist" aria-label="Anotações, regras ou improviso">
                     <button type="button" role="tab" id="abaAnotacoes" aria-selected={aba === 'anotacoes'}
                       aria-controls="painelAnotacoes" onClick={() => setAba('anotacoes')}>Anotações</button>
                     <button type="button" role="tab" id="abaRegras" aria-selected={aba === 'regras'}
                       aria-controls="painelRegras" onClick={() => setAba('regras')}>Regras</button>
+                    <button type="button" role="tab" id="abaImproviso" aria-selected={aba === 'improviso'}
+                      aria-controls="painelImproviso" onClick={() => setAba('improviso')}>Improviso</button>
                   </div>
                 </div>
                 {/* As anotações continuam montadas na aba de regras, para o resumo vivo seguir atualizado. */}
@@ -157,6 +160,13 @@ export default function Escudo() {
                   <div className="card-body d-flex flex-column" style={{ minHeight: 0 }}
                     role="tabpanel" id="painelRegras" aria-labelledby="abaRegras">
                     {campanha && <PainelRegras idSistema={campanha.idSistema} />}
+                  </div>
+                )}
+                {aba === 'improviso' && (
+                  <div className="card-body overflow-auto" style={{ minHeight: 0 }}
+                    role="tabpanel" id="painelImproviso" aria-labelledby="abaImproviso">
+                    <PainelImproviso idCampanha={id}
+                      aoSalvarRegistro={(registro) => setRegistros((lista) => [...lista, registro])} />
                   </div>
                 )}
               </div>
