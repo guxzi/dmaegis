@@ -31,3 +31,25 @@ public class CodigoConviteResponseApiModel
     public int IdRegistro { get; set; }
     public string Codigo { get; set; } = string.Empty;
 }
+
+public class RolarRequestApiModel
+{
+    public string Expressao { get; set; } = string.Empty;
+    public int Total { get; set; }
+    public string Detalhe { get; set; } = string.Empty;
+
+    /// <summary>Só vale para o mestre.</summary>
+    public bool Secreta { get; set; }
+}
+
+public class RolagemResponseApiModel
+{
+    public int Id { get; set; }
+    public string Autor { get; set; } = string.Empty;
+    public bool Mestre { get; set; }
+    public string Expressao { get; set; } = string.Empty;
+    public int Total { get; set; }
+    public string Detalhe { get; set; } = string.Empty;
+    public bool Secreta { get; set; }
+    public DateTime Data { get; set; }
+}

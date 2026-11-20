@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { mensagemDeErro } from '../api/erros.js';
 import {
-  moverMinhaFicha, obterJogador, obterMesaDoJogador, renovarCsrfJogador, URL_EVENTOS_JOGADOR, urlImagemDoJogador,
+  enviarRolagemDoJogador, listarRolagensDoJogador, moverMinhaFicha, obterJogador, obterMesaDoJogador, renovarCsrfJogador,
+  URL_EVENTOS_JOGADOR, urlImagemDoJogador,
 } from '../api/jogador.js';
 import Emblema from '../componentes/Emblema.jsx';
 import { CLASSE_SAUDE, estadoSaude, fracaoPv } from '../mesa/combate.js';
 import { ouvirMesa } from '../mesa/eventos.js';
+import PainelRolagens from '../mesa/PainelRolagens.jsx';
 import VisaoJogador from '../mesa/VisaoJogador.jsx';
 
 function Espera({ titulo, texto }) {
@@ -54,8 +56,11 @@ export default function Jogar() {
   const [erro, setErro] = useState('');
   const [conectado, setConectado] = useState(true);
   const [aviso, setAviso] = useState('');
+  const [versao, setVersao] = useState(0);
+  const [dadosAbertos, setDadosAbertos] = useState(false);
 
   const carregar = useCallback(async () => {
+    setVersao((v) => v + 1);
     try {
       setVisao(await obterMesaDoJogador());
       setErro('');
@@ -116,6 +121,21 @@ export default function Jogar() {
         <span>{jogador.nomeCampanha}</span>
       </div>
       {minha && <MinhaFicha ficha={minha} />}
+      <button type="button" className="botao-dados-jogador" aria-expanded={dadosAbertos} onClick={() => setDadosAbertos((v) => !v)}
+        title="Rolar dados para a mesa" aria-label="Dados">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 2 21 7v10l-9 5-9-5V7z" /><path d="M12 22V12M21 7l-9 5-9-5" />
+        </svg>
+      </button>
+      {dadosAbertos && (
+        <div className="janela-dados-jogador cartao-astral" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="d-flex align-items-center mb-2">
+            <strong className="flex-grow-1">Dados da mesa</strong>
+            <button type="button" className="btn-close btn-close-white btn-sm" onClick={() => setDadosAbertos(false)} aria-label="Fechar dados" />
+          </div>
+          <PainelRolagens versao={versao} listar={listarRolagensDoJogador} enviar={enviarRolagemDoJogador} compacto />
+        </div>
+      )}
       {!conectado && <div className="aviso-conexao" role="status">Reconectando à mesa…</div>}
       {aviso && <div className="aviso-conexao aviso-erro" role="status">{aviso}</div>}
     </main>

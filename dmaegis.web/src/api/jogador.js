@@ -10,6 +10,8 @@ export const obterJogador = () => apiJogador.get('/jogador/eu').then(dados);
 export const sairDaMesa = () => apiJogador.post('/jogador/sair').then(dados);
 export const obterMesaDoJogador = () => apiJogador.get('/jogador/mesa').then(dados);
 export const moverMinhaFicha = (coluna, linha) => apiJogador.put('/jogador/ficha/posicao', { coluna, linha }).then(dados);
+export const listarRolagensDoJogador = () => apiJogador.get('/jogador/rolagens').then(dados);
+export const enviarRolagemDoJogador = (rolagem) => apiJogador.post('/jogador/rolagens', rolagem).then(dados);
 export const urlImagemDoJogador = (id) => `/api/jogador/imagens/${id}`;
 export const URL_EVENTOS_JOGADOR = '/api/jogador/eventos';
 

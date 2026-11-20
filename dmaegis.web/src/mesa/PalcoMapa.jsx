@@ -2,7 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { COR_TIPO } from '../caderno/tipos.js';
 import { CLASSE_SAUDE, estadoSaude, fracaoPv } from './combate.js';
 import CamadaNevoa from './CamadaNevoa.jsx';
-import { celulaDoPonto, distanciaNaGrade, enquadrar, pontoDaCelula, textoDaDistancia, zoomNoPonto } from './grade.js';
+import {
+  celulaDoPonto, distanciaNaGrade, enquadrar, pontoDaCelula, textoDaDistancia, vistaCentradaNaCelula, vistaDaPinca, zoomNoPonto,
+} from './grade.js';
 import {
   caminhoEntre, celulasDoPincel, celulasDoRetangulo, conjuntoDe, diferenca, limitesDaGrade, pintar,
 } from './nevoa.js';
@@ -63,7 +65,7 @@ function Ficha({ ficha, mesa, urlImagem, posicao, selecionada, daVez, arrastando
 // (Shift + arrastar pinta um retângulo) e, ao soltar, `aoPintarNevoa({ revelar, esconder })` recebe a diferença.
 export default function PalcoMapa({
   mesa, urlImagem, modo = 'mestre', podeArrastar = () => false, aoMover, idSelecionada = null,
-  aoSelecionar = () => {}, pincel = null, aoPintarNevoa, aoMedirGrade, children,
+  aoSelecionar = () => {}, pincel = null, aoPintarNevoa, aoMedirGrade, focoNoCelular = null, children,
 }) {
   const palcoRef = useRef(null);
   const [vista, setVista] = useState({ x: 0, y: 0, escala: 1 });
@@ -93,11 +95,19 @@ export default function PalcoMapa({
     aoMedirGrade?.({ colunas: limites.colunas, linhas: limites.linhas });
   }, [aoMedirGrade, limites.colunas, limites.linhas]);
 
+  // Em tela estreita (celular) com uma ficha para focar, começa nela num zoom legível; senão, mostra o mapa inteiro.
   const centralizar = useCallback(() => {
     const palco = palcoRef.current;
     if (!palco) return;
+    if (focoNoCelular && palco.clientWidth < 700) {
+      setVista(vistaCentradaNaCelula(focoNoCelular.coluna, focoNoCelular.linha, mesa, palco.clientWidth, palco.clientHeight));
+      return;
+    }
     setVista(enquadrar(largura, altura, palco.clientWidth, palco.clientHeight));
-  }, [largura, altura]);
+  }, [largura, altura, focoNoCelular, mesa]);
+
+  // Dedos na tela (para o zoom com dois dedos).
+  const dedos = useRef(new Map());
 
   // O palco pode nascer com tamanho zero (aba em segundo plano, layout ainda montando): observa o tamanho.
   const [palcoTemTamanho, setPalcoTemTamanho] = useState(false);
@@ -210,7 +220,37 @@ export default function PalcoMapa({
     palcoRef.current.setPointerCapture(evento.pointerId);
   }
 
+  function posicaoNoPalco(evento) {
+    const caixa = palcoRef.current.getBoundingClientRect();
+    return { x: evento.clientX - caixa.left, y: evento.clientY - caixa.top };
+  }
+
+  function registrarDedo(evento) {
+    if (evento.pointerType !== 'touch') return;
+    dedos.current.set(evento.pointerId, posicaoNoPalco(evento));
+  }
+
+  function soltarDedo(evento) {
+    dedos.current.delete(evento.pointerId);
+    if (gesto.current?.tipo === 'pinca' && dedos.current.size < 2) gesto.current = null;
+  }
+
   function mover(evento) {
+    if (dedos.current.has(evento.pointerId)) dedos.current.set(evento.pointerId, posicaoNoPalco(evento));
+    if (dedos.current.size === 2) {
+      const [a, b] = [...dedos.current.values()];
+      const dist = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+      const meio = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      if (gesto.current?.tipo !== 'pinca') {
+        // Começou a pinça: o que o primeiro dedo fazia (arrastar ficha, mover a vista) é cancelado.
+        gesto.current = { tipo: 'pinca', dist, meio, vista };
+        setArrasto(null);
+        return;
+      }
+      const g = gesto.current;
+      setVista(vistaDaPinca(g.vista, g.dist, g.meio, dist, meio));
+      return;
+    }
     if (pincel) setCelulaSobCursor(celulaDoEvento(evento));
     const g = gesto.current;
     if (!g) return;
@@ -245,6 +285,11 @@ export default function PalcoMapa({
 
   function soltar(evento) {
     const g = gesto.current;
+    if (g?.tipo === 'pinca') {
+      soltarDedo(evento);
+      return;
+    }
+    dedos.current.delete(evento.pointerId);
     gesto.current = null;
     if (!g) return;
     if (g.tipo === 'medir') {
@@ -292,7 +337,7 @@ export default function PalcoMapa({
 
   return (
     <div className={`palco-mapa palco-${modo}${arrasto ? ' arrastando' : ''}${pincel ? ' palco-pintando' : ''}${regua && !pincel ? ' palco-medindo' : ''}`} ref={palcoRef}
-      onPointerDown={apertarFundo} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
+      onPointerDownCapture={registrarDedo} onPointerDown={apertarFundo} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar}
       onPointerLeave={() => setCelulaSobCursor(null)}>
       <div className="palco-conteudo"
         style={{ width: largura, height: altura, transform: `translate(${vista.x}px, ${vista.y}px) scale(${vista.escala})` }}>

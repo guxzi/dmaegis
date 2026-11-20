@@ -103,3 +103,29 @@ test('a régua conta quadrados como nas regras de 2024 (diagonal vale 1) e conve
   expect(textoDaDistancia({ quadrados: 1, metros: 1.5 })).toBe('1 quadrado · 1,5 m');
   expect(textoDaDistancia({ quadrados: 4, metros: 6 })).toBe('4 quadrados · 6 m');
 });
+
+test('desfazer uma mudança na ficha volta só os campos que mudaram', async () => {
+  const { valoresAnteriores, descreverMudanca } = await import('./combate.js');
+  const goblin = { id: 1, nome: 'Goblin 1', pvAtual: 7, condicoes: [], ca: 15 };
+  expect(valoresAnteriores(goblin, { pvAtual: 3 })).toEqual({ pvAtual: 7 });
+  expect(valoresAnteriores(goblin, { tamanho: 2 })).toEqual({ tamanho: null });
+  expect(descreverMudanca(goblin, { pvAtual: 3 })).toBe('PV de Goblin 1');
+  expect(descreverMudanca(goblin, { condicoes: ['Caído'] })).toBe('condições de Goblin 1');
+  expect(descreverMudanca(goblin, { ca: 12, tamanho: 2 })).toBe('mudança em Goblin 1');
+});
+
+test('no celular a vista começa centrada na ficha, num zoom legível', async () => {
+  const { vistaCentradaNaCelula } = await import('./grade.js');
+  const vista = vistaCentradaNaCelula(4, 2, { tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 0 }, 375, 800, 56);
+  expect(vista.escala).toBeCloseTo(0.8);
+  // O centro da célula (4, 2) cai no meio da tela.
+  expect(vista.x + (4 * 70 + 35) * vista.escala).toBeCloseTo(187.5);
+  expect(vista.y + (2 * 70 + 35) * vista.escala).toBeCloseTo(400);
+});
+
+test('com dois dedos, afastar dá zoom e mover o meio arrasta a vista', async () => {
+  const { vistaDaPinca } = await import('./grade.js');
+  const inicial = { x: 0, y: 0, escala: 1 };
+  expect(vistaDaPinca(inicial, 100, { x: 50, y: 50 }, 200, { x: 50, y: 50 })).toEqual({ escala: 2, x: -50, y: -50 });
+  expect(vistaDaPinca(inicial, 100, { x: 50, y: 50 }, 100, { x: 80, y: 60 })).toEqual({ escala: 1, x: 30, y: 10 });
+});

@@ -67,3 +67,17 @@ export function textoDaDistancia({ quadrados, metros }) {
   const m = Number.isInteger(metros) ? String(metros) : metros.toFixed(1).replace('.', ',');
   return `${quadrados} ${quadrados === 1 ? 'quadrado' : 'quadrados'} · ${m} m`;
 }
+
+// Vista centrada numa célula, com a célula ocupando cerca de `ladoNaTela` pixels (para telas pequenas).
+export function vistaCentradaNaCelula(coluna, linha, mesa, larguraTela, alturaTela, ladoNaTela = 52) {
+  const escala = Math.min(ZOOM_MAXIMO, Math.max(ZOOM_MINIMO, ladoNaTela / mesa.tamanhoCelula));
+  const centro = pontoDaCelula(coluna, linha, mesa);
+  const meio = mesa.tamanhoCelula / 2;
+  return { escala, x: larguraTela / 2 - (centro.x + meio) * escala, y: alturaTela / 2 - (centro.y + meio) * escala };
+}
+
+// Zoom com dois dedos: a distância entre os dedos muda a escala e o ponto do meio arrasta a vista.
+export function vistaDaPinca(inicial, distInicial, meioInicial, dist, meio) {
+  const base = { ...inicial, x: inicial.x + meio.x - meioInicial.x, y: inicial.y + meio.y - meioInicial.y };
+  return zoomNoPonto(base, inicial.escala * (dist / distInicial), meio);
+}

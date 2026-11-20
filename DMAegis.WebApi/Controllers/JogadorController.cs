@@ -25,10 +25,15 @@ public class JogadorController : ControllerBase
     private readonly ICanalMesa _canal;
     private readonly IValidator<MoverMinhaFichaRequestApiModel> _validatorMover;
     private readonly IAntiforgery _antiforgery;
+    private readonly IRolagemMesaService _rolagemService;
+    private readonly IValidator<RolarRequestApiModel> _validatorRolar;
 
     public JogadorController(IJogadorService jogadorService, ICanalMesa canal,
-        IValidator<MoverMinhaFichaRequestApiModel> validatorMover, IAntiforgery antiforgery)
+        IValidator<MoverMinhaFichaRequestApiModel> validatorMover, IAntiforgery antiforgery,
+        IRolagemMesaService rolagemService, IValidator<RolarRequestApiModel> validatorRolar)
     {
+        _rolagemService = rolagemService;
+        _validatorRolar = validatorRolar;
         _jogadorService = jogadorService;
         _canal = canal;
         _validatorMover = validatorMover;
@@ -111,6 +116,21 @@ public class JogadorController : ControllerBase
         var (tipo, conteudo) = await _jogadorService.ObterImagemAsync(User.ObterJogador(), id);
         Response.Headers.CacheControl = "private, max-age=31536000, immutable";
         return File(conteudo, tipo);
+    }
+
+    [HttpGet("api/jogador/rolagens")]
+    public async Task<ActionResult<ApiResponse<List<RolagemResponseApiModel>>>> Rolagens()
+    {
+        var rolagens = await _rolagemService.ListarDoJogadorAsync(User.ObterJogador());
+        return Ok(ApiResponse<List<RolagemResponseApiModel>>.Sucesso(rolagens.Select(r => r.ParaResponse()).ToList()));
+    }
+
+    [HttpPost("api/jogador/rolagens")]
+    public async Task<ActionResult<ApiResponse<RolagemResponseApiModel>>> Rolar([FromBody] RolarRequestApiModel request)
+    {
+        await _validatorRolar.ValidarOuLancarAsync(request);
+        var rolagem = await _rolagemService.RolarDoJogadorAsync(User.ObterJogador(), request.ParaServiceModel());
+        return StatusCode(StatusCodes.Status201Created, ApiResponse<RolagemResponseApiModel>.Sucesso(rolagem.ParaResponse()));
     }
 
     [HttpGet("api/jogador/eventos")]

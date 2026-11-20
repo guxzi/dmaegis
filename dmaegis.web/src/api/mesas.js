@@ -24,3 +24,7 @@ export const obterVisaoJogador = (idMesa) => api.get(`/mesas/${idMesa}/visao-jog
 // Névoa: o que o pincel pintou de uma vez ({ coluna, linha }[]), e "esconder tudo".
 export const alterarNevoa = (idMesa, revelar, esconder) => api.put(`/mesas/${idMesa}/nevoa`, { revelar, esconder }).then(dados);
 export const esconderTudo = (idMesa) => api.delete(`/mesas/${idMesa}/nevoa`).then(dados);
+
+// Rolagens da mesa (lado do mestre, inclusive as secretas).
+export const listarRolagens = (idMesa) => api.get(`/mesas/${idMesa}/rolagens`).then(dados);
+export const enviarRolagem = (idMesa, rolagem) => api.post(`/mesas/${idMesa}/rolagens`, rolagem).then(dados);

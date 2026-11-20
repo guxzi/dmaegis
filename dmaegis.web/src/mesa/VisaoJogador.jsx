@@ -7,10 +7,13 @@ export default function VisaoJogador({ visao, urlImagem, podeArrastar, aoMover }
   const mesa = { ...visao, id: visao.idMesa };
   const naOrdem = visao.participantes;
   const daVez = naOrdem.find((p) => p.id === visao.idParticipanteVez);
+  const minha = naOrdem.find((p) => p.ehMinha && p.coluna != null);
+  const foco = minha ? { coluna: minha.coluna, linha: minha.linha } : null;
 
   return (
     <div className="visao-jogador">
-      <PalcoMapa mesa={mesa} urlImagem={urlImagem} modo="jogador" podeArrastar={podeArrastar ?? (() => false)} aoMover={aoMover}>
+      <PalcoMapa mesa={mesa} urlImagem={urlImagem} modo="jogador" podeArrastar={podeArrastar ?? (() => false)} aoMover={aoMover}
+        focoNoCelular={foco}>
         {visao.emCombate && naOrdem.length > 0 && (
           <div className="faixa-turnos" onPointerDown={(e) => e.stopPropagation()}>
             <span className="faixa-turnos-rodada">Rodada {visao.rodada}</span>

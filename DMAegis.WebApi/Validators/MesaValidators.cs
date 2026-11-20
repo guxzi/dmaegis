@@ -93,3 +93,15 @@ public class AlterarNevoaValidator : AbstractValidator<AlterarNevoaRequestApiMod
     private static bool CelulaValida(CelulaApiModel? c) =>
         c is not null && c.Coluna is >= 0 and <= RegrasMesaApi.PosicaoMaxima && c.Linha is >= 0 and <= RegrasMesaApi.PosicaoMaxima;
 }
+
+public class RolarValidator : AbstractValidator<RolarRequestApiModel>
+{
+    public RolarValidator()
+    {
+        RuleFor(x => x.Expressao).Must(e => !string.IsNullOrWhiteSpace(e)).WithMessage("Informe a expressão da rolagem.");
+        RuleFor(x => x.Expressao).TamanhoAte(200, "A expressão");
+        RuleFor(x => x.Detalhe).Must(d => !string.IsNullOrWhiteSpace(d)).WithMessage("Informe o detalhe da rolagem.");
+        RuleFor(x => x.Detalhe).TamanhoAte(500, "O detalhe da rolagem");
+        RuleFor(x => x.Total).InclusiveBetween(-10_000_000, 10_000_000).WithMessage("O total está fora da faixa.");
+    }
+}

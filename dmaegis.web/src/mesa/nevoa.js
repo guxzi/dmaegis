@@ -80,3 +80,11 @@ export function emLotes(lista, tamanho = 5000) {
   for (let i = 0; i < lista.length; i += tamanho) lotes.push(lista.slice(i, i + tamanho));
   return lotes;
 }
+
+// Desfaz uma pintura: tira o que foi revelado e devolve o que foi escondido.
+export function desfazerPintura(final, { revelar, esconder }) {
+  const anterior = new Set(final);
+  for (const { coluna, linha } of revelar) anterior.delete(chaveCelula(coluna, linha));
+  for (const { coluna, linha } of esconder) anterior.add(chaveCelula(coluna, linha));
+  return anterior;
+}

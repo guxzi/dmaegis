@@ -136,6 +136,11 @@
   .painel-ficha.efeito-cura { animation: cura-flash 0.6s ease; }
   .lista-iniciativa > li { animation: surgir-leve 0.35s var(--dm-ease) backwards; }
   .ajuste-grade { animation: surgir-leve 0.25s var(--dm-ease) backwards; }
+  .aviso-desfeito { animation: faixa-surgir 0.3s var(--dm-ease) backwards; }
+  .lista-rolagens > li:first-child { animation: surgir-leve 0.35s var(--dm-ease) backwards; }
+  .janela-dados-jogador { animation: surgir-leve 0.25s var(--dm-ease) backwards; }
+  .resposta-oraculo,
+  .cartao-npc-rapido { animation: surgir-leve 0.35s var(--dm-ease) backwards; }
   .palco-destino { animation: pulsar-destino 1s ease-in-out infinite; }
   .ficha { animation: ficha-chegar 0.45s var(--dm-ease) backwards; }
   /* A célula revelada aparece aos poucos: o buraco da máscara surge em vez de abrir de uma vez. */

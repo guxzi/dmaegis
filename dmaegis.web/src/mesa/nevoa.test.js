@@ -46,3 +46,11 @@ test('revelar tudo cobre a grade inteira e vai em lotes', () => {
   expect(todasAsCelulas({ colunas: 3, linhas: 2 })).toHaveLength(6);
   expect(emLotes([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
 });
+
+test('desfazer uma pintura devolve o conjunto de antes', async () => {
+  const { desfazerPintura } = await import('./nevoa.js');
+  const antes = conjuntoDe([{ coluna: 1, linha: 1 }, { coluna: 2, linha: 2 }]);
+  const final = pintar(pintar(antes, [{ coluna: 3, linha: 3 }], 'revelar'), [{ coluna: 2, linha: 2 }], 'esconder');
+  const mudancas = diferenca(antes, final);
+  expect([...desfazerPintura(final, mudancas)].sort()).toEqual([...antes].sort());
+});

@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { listarRegistros } from '../api/caderno.js';
 import { mensagemDeErro } from '../api/erros.js';
 import { listarImagensDaCampanha, urlDaImagem } from '../api/imagens.js';
 import {
   adicionarFichas, alterarNevoa, ativarMesa, criarMesa, encerrarCombate, esconderTudo, excluirFicha, excluirMesa,
-  iniciarCombate, listarMesas, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
+  enviarRolagem, iniciarCombate, listarMesas, listarRolagens, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
 } from '../api/mesas.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
@@ -14,8 +14,8 @@ import Cabecalho from '../componentes/Cabecalho.jsx';
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx';
 import AdicionarFichas from '../mesa/AdicionarFichas.jsx';
 import AjusteNevoa from '../mesa/AjusteNevoa.jsx';
-import { celulaDaChave, emLotes, todasAsCelulas } from '../mesa/nevoa.js';
-import { corpoDaFicha, iniciativasParaComecar } from '../mesa/combate.js';
+import { celulaDaChave, desfazerPintura, emLotes, todasAsCelulas } from '../mesa/nevoa.js';
+import { corpoDaFicha, descreverMudanca, iniciativasParaComecar, valoresAnteriores } from '../mesa/combate.js';
 import { condicoesDoSistema } from '../mesa/condicoes.js';
 import EscolherMapa from '../mesa/EscolherMapa.jsx';
 import { celulaLivrePerto } from '../mesa/grade.js';
@@ -25,6 +25,7 @@ import PalcoMapa from '../mesa/PalcoMapa.jsx';
 import { urlEventosDaMesa } from '../api/jogador.js';
 import { ouvirMesa } from '../mesa/eventos.js';
 import PainelJogadores from '../mesa/PainelJogadores.jsx';
+import PainelRolagens from '../mesa/PainelRolagens.jsx';
 import { abrirProjecao, avisarMesaMudou, mostrarMesaNaProjecao } from '../projecao/canal.js';
 
 const GRADE_PADRAO = { tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 0, gradeVisivel: true };
@@ -92,10 +93,20 @@ export default function Mesa() {
   // Com o painel da névoa aberto, o palco pinta em vez de mover a vista.
   const [pincel, setPincel] = useState(null);
   const [limitesGrade, setLimitesGrade] = useState(null);
+  // Desfazer: as últimas ações reversíveis (mover, mudar a ficha, pintar a névoa), da mais nova para a mais velha.
+  // O histórico é de uma mesa só: ao trocar de mesa, ele fica vazio.
+  const historico = useRef({ idMesa: null, itens: [] });
+  const [tamanhoHistorico, setTamanhoHistorico] = useState({ idMesa: null, n: 0 });
+  // Muda a cada aviso da mesa, para o painel de rolagens buscar as novas.
+  const [versaoMesa, setVersaoMesa] = useState(0);
+  const [avisoDesfazer, setAvisoDesfazer] = useState('');
 
   const idMesa = Number(parametros.get('mesa')) || mesas?.[0]?.id || null;
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
   const fecharJogadores = useCallback(() => setVendoJogadores(false), []);
+  const podeDesfazer = tamanhoHistorico.idMesa === idMesa && tamanhoHistorico.n > 0;
+  const listarRolagensDaMesa = useCallback(() => listarRolagens(idMesa), [idMesa]);
+  const enviarRolagemDaMesa = useCallback((rolagem) => enviarRolagem(idMesa, rolagem), [idMesa]);
   const condicoes = useMemo(() => condicoesDoSistema(campanha?.idSistema), [campanha?.idSistema]);
 
   useEffect(() => {
@@ -117,6 +128,7 @@ export default function Mesa() {
   useEffect(() => {
     if (!idMesa) return undefined;
     return ouvirMesa(urlEventosDaMesa(id), () => {
+      setVersaoMesa((v) => v + 1);
       obterMesa(idMesa).then((m) => {
         setMesa(m);
         avisarMesaMudou(m.id);
@@ -154,13 +166,28 @@ export default function Mesa() {
     setParametros({ mesa: criada.id }, { replace: true });
   }
 
-  const salvarFichaComMudancas = useCallback((ficha, mudancas) => {
+  const registrar = useCallback((descricao, desfazer) => {
+    if (historico.current.idMesa !== idMesa) historico.current = { idMesa, itens: [] };
+    const { itens } = historico.current;
+    itens.push({ descricao, desfazer });
+    if (itens.length > 30) itens.shift();
+    setTamanhoHistorico({ idMesa, n: itens.length });
+  }, [idMesa]);
+
+  const salvarFichaComMudancas = useCallback(function salvar(ficha, mudancas, comHistorico = true) {
+    if (comHistorico) {
+      const anteriores = valoresAnteriores(ficha, mudancas);
+      registrar(descreverMudanca(ficha, mudancas), () => salvar({ ...ficha, ...mudancas }, anteriores, false));
+    }
     // Otimista: a tela muda já; a resposta do servidor confirma (ou o erro aparece e recarrega).
     setMesa((m) => m && ({ ...m, participantes: m.participantes.map((p) => (p.id === ficha.id ? { ...p, ...mudancas } : p)) }));
-    executar(() => salvarFicha(ficha.id, corpoDaFicha(ficha, mudancas)));
-  }, [executar]);
+    return executar(() => salvarFicha(ficha.id, corpoDaFicha(ficha, mudancas)));
+  }, [executar, registrar]);
 
-  const moverNoMapa = useCallback(async (ficha, coluna, linha) => {
+  const moverNoMapa = useCallback(async function mover(ficha, coluna, linha, comHistorico = true) {
+    if (comHistorico) {
+      registrar(`mover ${ficha.nome}`, () => mover({ ...ficha, coluna, linha }, ficha.coluna ?? null, ficha.linha ?? null, false));
+    }
     setMesa((m) => m && ({ ...m, participantes: m.participantes.map((p) => (p.id === ficha.id ? { ...p, coluna, linha } : p)) }));
     try {
       await moverFicha(ficha.id, coluna, linha);
@@ -169,7 +196,7 @@ export default function Mesa() {
       setErro(mensagemDeErro(e));
       obterMesa(idMesa).then(setMesa).catch(() => {});
     }
-  }, [idMesa]);
+  }, [idMesa, registrar]);
 
   // Fichas novas já entram no mapa: PJs a partir da coluna 2, os outros mais à direita, sem empilhar.
   async function adicionar(pedido) {
@@ -180,7 +207,7 @@ export default function Mesa() {
     for (const ficha of nova.participantes.filter((p) => !antes.has(p.id) && p.coluna == null)) {
       const { coluna, linha } = celulaLivrePerto(ficha.jogador ? 2 : 8, 2, ocupadas);
       ocupadas.add(`${coluna},${linha}`);
-      await moverNoMapa(ficha, coluna, linha);
+      await moverNoMapa(ficha, coluna, linha, false);
     }
   }
 
@@ -191,10 +218,29 @@ export default function Mesa() {
   }
 
   // O pincel soltou: mostra já o resultado e manda só a diferença para o servidor.
-  const pintarNevoa = useCallback((mudancas, final) => {
+  const pintarNevoa = useCallback(function pintar(mudancas, final, comHistorico = true) {
+    if (comHistorico) {
+      registrar('pintura da névoa', () => pintar(
+        { revelar: mudancas.esconder, esconder: mudancas.revelar }, desfazerPintura(final, mudancas), false));
+    }
     setMesa((m) => m && ({ ...m, celulasReveladas: [...final].map(celulaDaChave) }));
-    executar(() => alterarNevoa(idMesa, mudancas.revelar, mudancas.esconder));
-  }, [executar, idMesa]);
+    return executar(() => alterarNevoa(idMesa, mudancas.revelar, mudancas.esconder));
+  }, [executar, idMesa, registrar]);
+
+  const desfazer = useCallback(async () => {
+    if (historico.current.idMesa !== idMesa) return;
+    const item = historico.current.itens.pop();
+    setTamanhoHistorico({ idMesa, n: historico.current.itens.length });
+    if (!item) return;
+    await item.desfazer();
+    setAvisoDesfazer(`Desfeito: ${item.descricao}`);
+  }, [idMesa]);
+
+  useEffect(() => {
+    if (!avisoDesfazer) return undefined;
+    const t = setTimeout(() => setAvisoDesfazer(''), 2500);
+    return () => clearTimeout(t);
+  }, [avisoDesfazer]);
 
   async function revelarTudo() {
     if (!limitesGrade) return;
@@ -227,12 +273,17 @@ export default function Mesa() {
     }
   }
 
-  // Atalhos: N passa o turno; Esc tira a seleção (fora dos campos de texto).
+  // Atalhos: N passa o turno; Ctrl+Z desfaz; Esc tira a seleção (fora dos campos de texto).
   useEffect(() => {
     function aoTeclar(evento) {
       const alvo = evento.target;
       if (alvo.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (evento.key === 'Escape') setIdSelecionada(null);
+      if ((evento.key === 'z' || evento.key === 'Z') && (evento.ctrlKey || evento.metaKey) && !evento.shiftKey) {
+        evento.preventDefault();
+        desfazer();
+        return;
+      }
       if ((evento.key === 'n' || evento.key === 'N') && mesa?.emCombate && !evento.ctrlKey && !evento.metaKey) {
         evento.preventDefault();
         executar(() => proximoTurno(mesa.id));
@@ -240,7 +291,7 @@ export default function Mesa() {
     }
     window.addEventListener('keydown', aoTeclar);
     return () => window.removeEventListener('keydown', aoTeclar);
-  }, [mesa?.emCombate, mesa?.id, executar]);
+  }, [mesa?.emCombate, mesa?.id, executar, desfazer]);
 
   if (naoEncontrada) {
     return (
@@ -347,6 +398,7 @@ export default function Mesa() {
                     aoRevelarTudo={revelarTudo} aoEsconderTudo={() => executar(() => esconderTudo(mesa.id))}
                     aoFechar={() => setPincel(null)} />
                 )}
+                {avisoDesfazer && <div className="aviso-desfeito" role="status">{avisoDesfazer}</div>}
                 {mesa.emCombate && daVez && (
                   <div className="faixa-vez" key={daVez.id}>
                     <span className="faixa-vez-rodada">Rodada {mesa.rodada}</span>
@@ -360,6 +412,8 @@ export default function Mesa() {
               <div className="mesa-lateral-cabecalho">
                 <span className="titulo-runico">{mesa.emCombate ? `Combate · Rodada ${mesa.rodada}` : 'Fichas'}</span>
                 <div className="ms-auto d-flex gap-2">
+                  <button type="button" className="btn btn-sm btn-fantasma px-2" disabled={!podeDesfazer} onClick={desfazer}
+                    title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
                   {mesa.emCombate ? (
                     <>
                       <button type="button" className="btn btn-sm btn-primary" disabled={ocupado}
@@ -388,6 +442,11 @@ export default function Mesa() {
                     aoRemover={(f) => setExcluindo({ tipo: 'ficha', ficha: f, nome: f.nome })}
                     aoFechar={() => setIdSelecionada(null)} />
                 )}
+
+                <div className="divisor-estelar my-3" />
+                <p className="rotulo-painel">Rolagens da mesa</p>
+                <PainelRolagens key={mesa.id} versao={versaoMesa} comSecreta
+                  listar={listarRolagensDaMesa} enviar={enviarRolagemDaMesa} />
 
                 <div className="divisor-estelar my-3" />
                 <AdicionarFichas registros={registros} rotulo={rotulo} ocupado={ocupado}

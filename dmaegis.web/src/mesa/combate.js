@@ -55,3 +55,17 @@ export function corpoDaFicha(ficha, mudancas = {}) {
     condicoes: f.condicoes ?? [],
   };
 }
+
+// Para desfazer uma mudança na ficha: os valores que ela tinha antes, só dos campos que mudaram.
+export function valoresAnteriores(ficha, mudancas) {
+  return Object.fromEntries(Object.keys(mudancas).map((chave) => [chave, ficha[chave] ?? null]));
+}
+
+// Descrição curta da ação, para o aviso "Desfeito: …".
+export function descreverMudanca(ficha, mudancas) {
+  const chaves = Object.keys(mudancas);
+  if (chaves.length === 1 && chaves[0] === 'pvAtual') return `PV de ${ficha.nome}`;
+  if (chaves.length === 1 && chaves[0] === 'condicoes') return `condições de ${ficha.nome}`;
+  if (chaves.length === 1 && chaves[0] === 'visivel') return `visibilidade de ${ficha.nome}`;
+  return `mudança em ${ficha.nome}`;
+}

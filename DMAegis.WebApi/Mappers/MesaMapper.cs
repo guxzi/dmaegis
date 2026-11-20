@@ -130,4 +130,24 @@ public static class MesaMapper
             EhMinha = p.EhMinha,
         }).ToList(),
     };
+
+    public static RolarServiceModel ParaServiceModel(this RolarRequestApiModel request) => new()
+    {
+        Expressao = request.Expressao ?? string.Empty,
+        Total = request.Total,
+        Detalhe = request.Detalhe ?? string.Empty,
+        Secreta = request.Secreta,
+    };
+
+    public static RolagemResponseApiModel ParaResponse(this RolagemServiceModel r) => new()
+    {
+        Id = r.Id,
+        Autor = r.Autor,
+        Mestre = r.Mestre,
+        Expressao = r.Expressao,
+        Total = r.Total,
+        Detalhe = r.Detalhe,
+        Secreta = r.Secreta,
+        Data = r.Data,
+    };
 }
