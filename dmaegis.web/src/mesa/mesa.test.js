@@ -129,3 +129,12 @@ test('com dois dedos, afastar dá zoom e mover o meio arrasta a vista', async ()
   expect(vistaDaPinca(inicial, 100, { x: 50, y: 50 }, 200, { x: 50, y: 50 })).toEqual({ escala: 2, x: -50, y: -50 });
   expect(vistaDaPinca(inicial, 100, { x: 50, y: 50 }, 100, { x: 80, y: 60 })).toEqual({ escala: 1, x: 30, y: 10 });
 });
+
+test('corpoDaMesa leva a mesa com as mudanças e completa o que falta', async () => {
+  const { corpoDaMesa } = await import('./combate.js');
+  const mesa = { id: 5, nome: 'Ponte', tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 3, gradeVisivel: true, participantes: [] };
+  expect(corpoDaMesa(mesa, { clima: 'neve' })).toEqual({
+    nome: 'Ponte', idImagemRegistro: null, tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 3, gradeVisivel: true,
+    movimentoLivre: true, nevoa: false, clima: 'neve',
+  });
+});

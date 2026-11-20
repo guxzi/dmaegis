@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { listarRegistros } from '../api/caderno.js';
 import { mensagemDeErro } from '../api/erros.js';
 import { listarImagensDaCampanha, urlDaImagem } from '../api/imagens.js';
 import {
   adicionarFichas, alterarNevoa, ativarMesa, criarMesa, encerrarCombate, esconderTudo, excluirFicha, excluirMesa,
-  enviarRolagem, enviarSinal, iniciarCombate, listarMesas, listarRolagens, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
+  enviarRolagem, iniciarCombate, listarMesas, listarRolagens, moverFicha, obterMesa, proximoTurno, salvarFicha, salvarMesa,
 } from '../api/mesas.js';
 import { Carregando } from '../auth/RotaProtegida.jsx';
 import SeloSistema from '../campanhas/SeloSistema.jsx';
@@ -14,88 +14,28 @@ import Cabecalho from '../componentes/Cabecalho.jsx';
 import ConfirmarExclusao from '../componentes/ConfirmarExclusao.jsx';
 import AdicionarFichas from '../mesa/AdicionarFichas.jsx';
 import AjusteNevoa from '../mesa/AjusteNevoa.jsx';
+import { AjusteClima, AjusteGrade } from '../mesa/AjustesMesa.jsx';
 import { celulaDaChave, desfazerPintura, emLotes, todasAsCelulas } from '../mesa/nevoa.js';
-import { corpoDaFicha, descreverMudanca, iniciativasParaComecar, valoresAnteriores } from '../mesa/combate.js';
+import { corpoDaFicha, corpoDaMesa, descreverMudanca, iniciativasParaComecar, valoresAnteriores } from '../mesa/combate.js';
 import { condicoesDoSistema } from '../mesa/condicoes.js';
 import EscolherMapa from '../mesa/EscolherMapa.jsx';
 import { celulaLivrePerto } from '../mesa/grade.js';
 import ListaIniciativa from '../mesa/ListaIniciativa.jsx';
 import PainelFicha from '../mesa/PainelFicha.jsx';
 import PalcoMapa from '../mesa/PalcoMapa.jsx';
-import { urlEventosDaMesa } from '../api/jogador.js';
-import { CLIMAS, limitarTaxa } from '../mesa/efeitos.js';
-import { ID_TELA, ouvirMesa } from '../mesa/eventos.js';
 import RolagensNaMesa from '../mesa/RolagensNaMesa.jsx';
-import { useSinaisMesa } from '../mesa/useEfeitos.js';
+import { useDesfazer } from '../mesa/useDesfazer.js';
 import { useRolagens } from '../mesa/useRolagens.js';
+import { useTempoRealMesa } from '../mesa/useTempoRealMesa.js';
 import PainelEntregas from '../mesa/PainelEntregas.jsx';
 import ResumoSessao from '../mesa/ResumoSessao.jsx';
 import PainelJogadores from '../mesa/PainelJogadores.jsx';
 import PainelRolagens from '../mesa/PainelRolagens.jsx';
-import { abrirProjecao, avisarMesaMudou, avisarSinalNaProjecao, mostrarMesaNaProjecao } from '../projecao/canal.js';
+import { abrirProjecao, avisarMesaMudou, mostrarMesaNaProjecao } from '../projecao/canal.js';
 
 const GRADE_PADRAO = { tamanhoCelula: 70, deslocamentoX: 0, deslocamentoY: 0, gradeVisivel: true };
 
-function corpoDaMesa(mesa, mudancas = {}) {
-  const m = { ...mesa, ...mudancas };
-  return {
-    nome: m.nome,
-    idImagemRegistro: m.idImagemRegistro ?? null,
-    tamanhoCelula: m.tamanhoCelula,
-    deslocamentoX: m.deslocamentoX,
-    deslocamentoY: m.deslocamentoY,
-    gradeVisivel: m.gradeVisivel,
-    movimentoLivre: m.movimentoLivre ?? true,
-    nevoa: m.nevoa ?? false,
-    clima: m.clima ?? null,
-  };
-}
 
-// Clima por cima do mapa (os jogadores também veem).
-function AjusteClima({ clima, aoEscolher, aoFechar }) {
-  return (
-    <div className="ajuste-clima cartao-astral" onPointerDown={(e) => e.stopPropagation()}>
-      <div className="d-flex align-items-center mb-2">
-        <strong className="flex-grow-1">Clima</strong>
-        <button type="button" className="btn-close btn-close-white btn-sm" onClick={aoFechar} aria-label="Fechar clima" />
-      </div>
-      <div className="segmentado" role="group" aria-label="Clima">
-        {CLIMAS.map((c) => (
-          <button key={c.rotulo} type="button" aria-pressed={(clima ?? null) === c.id} onClick={() => aoEscolher(c.id)}>{c.rotulo}</button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Ajuste da grade com prévia ao vivo: os controles mudam a mesa na hora e salvam ao soltar.
-function AjusteGrade({ mesa, aoMudar, aoSalvar, aoFechar }) {
-  const controle = (chave, rotulo, min, max) => (
-    <label className="ajuste-grade-controle">
-      <span>{rotulo} <strong>{mesa[chave]}</strong></span>
-      <input type="range" className="form-range" min={min} max={max} value={mesa[chave]}
-        onChange={(e) => aoMudar({ [chave]: Number(e.target.value) })}
-        onPointerUp={() => aoSalvar()} onKeyUp={() => aoSalvar()} />
-    </label>
-  );
-  return (
-    <div className="ajuste-grade cartao-astral" onPointerDown={(e) => e.stopPropagation()}>
-      <div className="d-flex align-items-center mb-2">
-        <strong className="flex-grow-1">Grade</strong>
-        <button type="button" className="btn-close btn-close-white btn-sm" onClick={aoFechar} aria-label="Fechar ajuste da grade" />
-      </div>
-      {controle('tamanhoCelula', 'Célula', 20, 200)}
-      {controle('deslocamentoX', 'Mover →', -100, 100)}
-      {controle('deslocamentoY', 'Mover ↓', -100, 100)}
-      <div className="form-check form-switch mt-1">
-        <input className="form-check-input" type="checkbox" id="gradeVisivel" checked={mesa.gradeVisivel}
-          onChange={(e) => { aoMudar({ gradeVisivel: e.target.checked }); aoSalvar({ gradeVisivel: e.target.checked }); }} />
-        <label className="form-check-label" htmlFor="gradeVisivel">Mostrar a grade</label>
-      </div>
-      <p className="small text-secondary mb-0 mt-2">Encaixe as linhas nos quadrados desenhados no mapa.</p>
-    </div>
-  );
-}
 
 // A mesa: mapa com grade e fichas, combate ao lado, e a visão dos jogadores na projeção.
 export default function Mesa() {
@@ -117,34 +57,25 @@ export default function Mesa() {
   const [escolhendoClima, setEscolhendoClima] = useState(false);
   const [entregando, setEntregando] = useState(false);
   const [resumindo, setResumindo] = useState(false);
-  const [pediuIniciativa, setPediuIniciativa] = useState(false);
   // Com o painel da névoa aberto, o palco pinta em vez de mover a vista.
   const [pincel, setPincel] = useState(null);
   const [limitesGrade, setLimitesGrade] = useState(null);
-  // Desfazer: as últimas ações reversíveis (mover, mudar a ficha, pintar a névoa), da mais nova para a mais velha.
-  // O histórico é de uma mesa só: ao trocar de mesa, ele fica vazio.
-  const historico = useRef({ idMesa: null, itens: [] });
-  const [tamanhoHistorico, setTamanhoHistorico] = useState({ idMesa: null, n: 0 });
-  // Muda a cada aviso da mesa, para o painel de rolagens buscar as novas.
-  const [versaoMesa, setVersaoMesa] = useState(0);
-  const [avisoDesfazer, setAvisoDesfazer] = useState('');
 
   const idMesa = Number(parametros.get('mesa')) || mesas?.[0]?.id || null;
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
   const fecharJogadores = useCallback(() => setVendoJogadores(false), []);
   const fecharEntregas = useCallback(() => setEntregando(false), []);
   const fecharResumo = useCallback(() => setResumindo(false), []);
-  const podeDesfazer = tamanhoHistorico.idMesa === idMesa && tamanhoHistorico.n > 0;
   const listarRolagensDaMesa = useCallback(() => (idMesa ? listarRolagens(idMesa) : Promise.resolve([])), [idMesa]);
   const enviarRolagemDaMesa = useCallback((rolagem) => enviarRolagem(idMesa, rolagem), [idMesa]);
   const condicoes = useMemo(() => condicoesDoSistema(campanha?.idSistema), [campanha?.idSistema]);
+  const { registrar, desfazer, podeDesfazer, aviso: avisoDesfazer } = useDesfazer(idMesa);
+  const aoMesaChegar = useCallback((m) => {
+    setMesa(m);
+    avisarMesaMudou(m.id);
+  }, []);
+  const { sinais, versao: versaoMesa, pingar, arrastar, pedirIniciativa, pediuIniciativa } = useTempoRealMesa(id, idMesa, mesa, aoMesaChegar);
   const rolagens = useRolagens(listarRolagensDaMesa, versaoMesa);
-  // Pings, reações e arrastos ao vivo (os dos jogadores chegam pelo fluxo da mesa).
-  const sinais = useSinaisMesa(idMesa);
-  const receberSinal = useRef(sinais.receber);
-  useEffect(() => {
-    receberSinal.current = sinais.receber;
-  }, [sinais.receber]);
 
   useEffect(() => {
     listarMesas(id).then(setMesas).catch((e) => setErro(mensagemDeErro(e)));
@@ -160,68 +91,6 @@ export default function Mesa() {
       ativo = false;
     };
   }, [idMesa]);
-
-  // Tempo real: quando um jogador move a ficha (ou outra aba mexe na mesa), busca a mesa de novo.
-  useEffect(() => {
-    if (!idMesa) return undefined;
-    return ouvirMesa(urlEventosDaMesa(id), () => {
-      setVersaoMesa((v) => v + 1);
-      obterMesa(idMesa).then((m) => {
-        setMesa(m);
-        avisarMesaMudou(m.id);
-      }).catch(() => {});
-    }, undefined, (sinal) => {
-      receberSinal.current(sinal);
-      // O que os jogadores podem ver também vai para a janela de projeção.
-      if (sinal.publico) avisarSinalNaProjecao(sinal);
-    });
-  }, [id, idMesa]);
-
-  // Ping do mestre: aparece aqui na hora e vai para os jogadores e para a projeção.
-  const pingar = useCallback(({ coluna, linha }) => {
-    if (!idMesa) return;
-    const sinal = { tipo: 'ping', coluna, linha, origem: ID_TELA };
-    const completo = { ...sinal, autor: 'Mestre', idMesa };
-    sinais.receber(completo);
-    avisarSinalNaProjecao(completo);
-    enviarSinal(idMesa, sinal).catch(() => {});
-  }, [idMesa, sinais]);
-
-  // Pede a iniciativa aos jogadores: aparece um cartão na tela deles, e o que rolarem entra na ficha.
-  const pedirIniciativa = useCallback(() => {
-    if (!idMesa) return;
-    enviarSinal(idMesa, { tipo: 'pedir-iniciativa', origem: ID_TELA }).catch(() => {});
-    setPediuIniciativa(true);
-  }, [idMesa]);
-
-  useEffect(() => {
-    if (!pediuIniciativa) return undefined;
-    const t = setTimeout(() => setPediuIniciativa(false), 2500);
-    return () => clearTimeout(t);
-  }, [pediuIniciativa]);
-
-  // Arrasto ao vivo: no máximo ~11 avisos por segundo; ao soltar, avisa a célula final na hora.
-  const envioArrasto = useMemo(() => limitarTaxa((sinal, publico) => {
-    enviarSinal(sinal.idMesa, sinal).catch(() => {});
-    if (publico) avisarSinalNaProjecao({ ...sinal, autor: 'Mestre' });
-  }, 90), []);
-  useEffect(() => () => envioArrasto.cancelar(), [envioArrasto]);
-  const arrastar = useCallback((ficha, posicao, terminou) => {
-    if (!idMesa || !mesa) return;
-    // Mesma regra do servidor: ficha oculta, ou monstro com a névoa ligada, não vai para a projeção.
-    const publico = ficha.visivel !== false && (!mesa.nevoa || ficha.jogador);
-    const sinal = {
-      tipo: terminou ? 'arrasto-fim' : 'arrasto', idParticipante: ficha.id, coluna: posicao?.coluna ?? null, linha: posicao?.linha ?? null,
-      origem: ID_TELA, idMesa,
-    };
-    if (!terminou) {
-      envioArrasto.chamar(sinal, publico);
-      return;
-    }
-    envioArrasto.cancelar();
-    enviarSinal(idMesa, sinal).catch(() => {});
-    if (publico) avisarSinalNaProjecao({ ...sinal, autor: 'Mestre' });
-  }, [idMesa, mesa, envioArrasto]);
 
   // Toda resposta da API traz a mesa inteira: atualiza a tela e avisa a projeção.
   const aplicar = useCallback((nova) => {
@@ -252,14 +121,6 @@ export default function Mesa() {
     setMesas((lista) => [...(lista ?? []), { id: criada.id, nome: criada.nome, ativa: criada.ativa, emCombate: false }]);
     setParametros({ mesa: criada.id }, { replace: true });
   }
-
-  const registrar = useCallback((descricao, desfazer) => {
-    if (historico.current.idMesa !== idMesa) historico.current = { idMesa, itens: [] };
-    const { itens } = historico.current;
-    itens.push({ descricao, desfazer });
-    if (itens.length > 30) itens.shift();
-    setTamanhoHistorico({ idMesa, n: itens.length });
-  }, [idMesa]);
 
   const salvarFichaComMudancas = useCallback(function salvar(ficha, mudancas, comHistorico = true) {
     if (comHistorico) {
@@ -313,21 +174,6 @@ export default function Mesa() {
     setMesa((m) => m && ({ ...m, celulasReveladas: [...final].map(celulaDaChave) }));
     return executar(() => alterarNevoa(idMesa, mudancas.revelar, mudancas.esconder));
   }, [executar, idMesa, registrar]);
-
-  const desfazer = useCallback(async () => {
-    if (historico.current.idMesa !== idMesa) return;
-    const item = historico.current.itens.pop();
-    setTamanhoHistorico({ idMesa, n: historico.current.itens.length });
-    if (!item) return;
-    await item.desfazer();
-    setAvisoDesfazer(`Desfeito: ${item.descricao}`);
-  }, [idMesa]);
-
-  useEffect(() => {
-    if (!avisoDesfazer) return undefined;
-    const t = setTimeout(() => setAvisoDesfazer(''), 2500);
-    return () => clearTimeout(t);
-  }, [avisoDesfazer]);
 
   async function revelarTudo() {
     if (!limitesGrade) return;

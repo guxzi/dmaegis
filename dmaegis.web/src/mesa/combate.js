@@ -56,6 +56,22 @@ export function corpoDaFicha(ficha, mudancas = {}) {
   };
 }
 
+// Corpo do PUT da mesa, a partir dela mesma com as mudanças (grade, mapa, névoa, clima...).
+export function corpoDaMesa(mesa, mudancas = {}) {
+  const m = { ...mesa, ...mudancas };
+  return {
+    nome: m.nome,
+    idImagemRegistro: m.idImagemRegistro ?? null,
+    tamanhoCelula: m.tamanhoCelula,
+    deslocamentoX: m.deslocamentoX,
+    deslocamentoY: m.deslocamentoY,
+    gradeVisivel: m.gradeVisivel,
+    movimentoLivre: m.movimentoLivre ?? true,
+    nevoa: m.nevoa ?? false,
+    clima: m.clima ?? null,
+  };
+}
+
 // Para desfazer uma mudança na ficha: os valores que ela tinha antes, só dos campos que mudaram.
 export function valoresAnteriores(ficha, mudancas) {
   return Object.fromEntries(Object.keys(mudancas).map((chave) => [chave, ficha[chave] ?? null]));
