@@ -1553,3 +1553,4 @@
   box-shadow: 0 0 50px -8px rgba(var(--dm-violeta-rgb), 0.85);
 }
 .pedido-iniciativa-titulo { margin: 0 0 0.2rem; font-family: 'Cinzel', Georgia, serif; font-size: 1.5rem; color: #fff; text-shadow: 0 0 16px rgba(var(--dm-violeta-rgb), 0.9); }
+.texto-resumo { font-family: ui-monospace, Consolas, monospace; font-size: 0.86rem; line-height: 1.55; }

@@ -31,3 +31,8 @@ export const enviarRolagem = (idMesa, rolagem) => api.post(`/mesas/${idMesa}/rol
 
 // Sinal passageiro do mestre (ping, reação, arrasto ao vivo). Nada é gravado; erro é ignorado.
 export const enviarSinal = (idMesa, sinal) => api.post(`/mesas/${idMesa}/sinais`, sinal).then(dados);
+
+// Rascunho do resumo da sessão (combates, quedas, críticos e entregas das últimas horas).
+export const gerarResumo = (idMesa, horas) => api.get(`/mesas/${idMesa}/resumo`, { params: { horas } }).then(dados);
+// Acrescenta o texto revisado ao fim do resumo da sessão.
+export const anexarAoResumo = (idSessao, texto) => api.post(`/sessoes/${idSessao}/resumo`, { texto }).then(dados);

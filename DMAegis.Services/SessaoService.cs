@@ -68,6 +68,9 @@ public interface ISessaoService
     Task<SessaoServiceModel> ObterAsync(int idUsuario, int id);
     Task<SessaoServiceModel> InserirAsync(int idUsuario, int idCampanha, InserirSessaoServiceModel dados);
     Task<SessaoServiceModel> AtualizarAsync(int idUsuario, int id, SalvarSessaoServiceModel dados);
+
+    /// <summary>Acrescenta um texto (o resumo da mesa) ao fim do resumo da sessão.</summary>
+    Task AnexarAoResumoAsync(int idUsuario, int id, string texto);
     Task ExcluirAsync(int idUsuario, int id);
 
     Task<SegredoServiceModel> InserirSegredoAsync(int idUsuario, int idSessao, string texto);
@@ -276,6 +279,15 @@ public class SessaoService : ISessaoService
     }
 
     /// <summary>Sessão inexistente ou de campanha de outro usuário → SessaoNaoEncontrada (404).</summary>
+    public async Task AnexarAoResumoAsync(int idUsuario, int id, string texto)
+    {
+        await ObterSessaoDoUsuarioOuLancarAsync(idUsuario, id);
+        var limpo = (texto ?? string.Empty).Trim();
+        if (limpo.Length == 0)
+            throw new BusinessRuleException((BusinessErrors.DadosInvalidos.Code, "O resumo está vazio."));
+        await _sessaoRepository.AnexarAoResumoAsync(id, limpo);
+    }
+
     private async Task<Sessao> ObterSessaoDoUsuarioOuLancarAsync(int idUsuario, int id)
     {
         var sessao = await _sessaoRepository.ObterAsync(id)

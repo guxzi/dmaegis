@@ -17,6 +17,9 @@ public interface ISessaoRepository
     /// <summary>Número repetido na campanha → RegistroDuplicadoException.</summary>
     Task AtualizarAsync(Sessao sessao);
 
+    /// <summary>Acrescenta um texto ao fim do resumo da sessão (com uma linha em branco antes, se já houver resumo).</summary>
+    Task AnexarAoResumoAsync(int id, string texto);
+
     /// <summary>Apaga cenas, vínculos e anotações em cascata; segredos ficam com a sessão nula.</summary>
     Task ExcluirAsync(int id);
 }
@@ -70,6 +73,16 @@ public class SessaoRepository : RepositoryBase, ISessaoRepository
                 ds_comeco_forte = @ComecoForte, ds_resumo = @Resumo
             WHERE co_seq_sessao = @Id
             """, sessao));
+
+    public async Task AnexarAoResumoAsync(int id, string texto)
+    {
+        await using var conexao = ConexaoFactory.Criar();
+        await conexao.ExecuteAsync("""
+            UPDATE tb_sessao
+               SET ds_resumo = CASE WHEN ds_resumo IS NULL OR ds_resumo = '' THEN @texto ELSE CONCAT(ds_resumo, '\n\n', @texto) END
+             WHERE co_seq_sessao = @id
+            """, new { id, texto });
+    }
 
     public async Task ExcluirAsync(int id)
     {

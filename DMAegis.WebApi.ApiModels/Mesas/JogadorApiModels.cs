@@ -62,6 +62,16 @@ public class EntregaResponseApiModel
     public DateTime Data { get; set; }
 }
 
+public class ResumoMesaResponseApiModel
+{
+    public string Texto { get; set; } = string.Empty;
+}
+
+public class AnexarResumoRequestApiModel
+{
+    public string Texto { get; set; } = string.Empty;
+}
+
 public class RolagemResponseApiModel
 {
     public int Id { get; set; }

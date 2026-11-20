@@ -17,6 +17,7 @@ public class MesaServiceTests
     private readonly Mock<ICampanhaService> _campanhas = new();
     private readonly Mock<ICanalMesa> _canal = new();
     private readonly Mock<ICelulaReveladaRepository> _celulas = new();
+    private readonly Mock<IEventoMesaRepository> _eventos = new();
 
     private readonly List<ParticipanteMesa> _naMesa = [];
 
@@ -42,7 +43,7 @@ public class MesaServiceTests
     }
 
     private MesaService CriarService() => new(_mesas.Object, _participantes.Object, _condicoes.Object,
-        _registros.Object, _atributos.Object, _imagens.Object, _campanhas.Object, _canal.Object, _celulas.Object);
+        _registros.Object, _atributos.Object, _imagens.Object, _campanhas.Object, _canal.Object, _celulas.Object, _eventos.Object);
 
     private static async Task<int> CodigoAsync(Func<Task> acao) =>
         (await Assert.ThrowsAsync<BusinessRuleException>(acao)).Code;
@@ -314,5 +315,36 @@ public class MesaServiceTests
         Assert.Equal("chuva", salva!.Clima);
         Assert.Equal("chuva", mesa.Clima);
         Assert.Equal("chuva", MesaService.FiltrarParaJogador(mesa, null).Clima);
+    }
+
+    [Fact]
+    public async Task AtualizarParticipanteAsync_QuandoCai_AnotaNoDiarioDaMesa()
+    {
+        _participantes.Setup(p => p.ObterAsync(1)).ReturnsAsync(() => new ParticipanteMesa { Id = 1, IdMesa = 5, Nome = "Goblin 1", PvAtual = 3, PvMaximo = 7 });
+        EventoMesa? anotado = null;
+        _eventos.Setup(e => e.InserirAsync(It.IsAny<EventoMesa>())).Callback<EventoMesa>(e => anotado = e);
+
+        await CriarService().AtualizarParticipanteAsync(1, 1, new SalvarParticipanteServiceModel { Nome = "Goblin 1", PvAtual = 0, PvMaximo = 7 });
+        Assert.Equal(("caiu", "Goblin 1 caiu.", 5), (anotado!.Tipo, anotado.Texto, anotado.IdMesa));
+
+        // Só dano, sem cair: nada no diário.
+        anotado = null;
+        await CriarService().AtualizarParticipanteAsync(1, 1, new SalvarParticipanteServiceModel { Nome = "Goblin 1", PvAtual = 1, PvMaximo = 7 });
+        Assert.Null(anotado);
+    }
+
+    [Fact]
+    public async Task IniciarEEncerrarCombate_AnotamNoDiario()
+    {
+        _naMesa.Add(new ParticipanteMesa { Id = 1, IdMesa = 5, Nome = "Lia", Visivel = true, Jogador = true });
+        _naMesa.Add(new ParticipanteMesa { Id = 2, IdMesa = 5, Nome = "Goblin", Visivel = true });
+        var anotados = new List<EventoMesa>();
+        _eventos.Setup(e => e.InserirAsync(It.IsAny<EventoMesa>())).Callback<EventoMesa>(anotados.Add);
+
+        await CriarService().IniciarCombateAsync(1, 5, [new IniciativaServiceModel { IdParticipante = 1, Iniciativa = 18 }, new IniciativaServiceModel { IdParticipante = 2, Iniciativa = 7 }]);
+        await CriarService().EncerrarCombateAsync(1, 5);
+
+        Assert.Equal("O combate começou. Ordem: Lia (18), Goblin (7).", anotados[0].Texto);
+        Assert.Equal("combate-fim", anotados[1].Tipo);
     }
 }

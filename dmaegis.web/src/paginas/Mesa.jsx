@@ -29,6 +29,7 @@ import RolagensNaMesa from '../mesa/RolagensNaMesa.jsx';
 import { useSinaisMesa } from '../mesa/useEfeitos.js';
 import { useRolagens } from '../mesa/useRolagens.js';
 import PainelEntregas from '../mesa/PainelEntregas.jsx';
+import ResumoSessao from '../mesa/ResumoSessao.jsx';
 import PainelJogadores from '../mesa/PainelJogadores.jsx';
 import PainelRolagens from '../mesa/PainelRolagens.jsx';
 import { abrirProjecao, avisarMesaMudou, avisarSinalNaProjecao, mostrarMesaNaProjecao } from '../projecao/canal.js';
@@ -115,6 +116,7 @@ export default function Mesa() {
   const [vendoJogadores, setVendoJogadores] = useState(false);
   const [escolhendoClima, setEscolhendoClima] = useState(false);
   const [entregando, setEntregando] = useState(false);
+  const [resumindo, setResumindo] = useState(false);
   const [pediuIniciativa, setPediuIniciativa] = useState(false);
   // Com o painel da névoa aberto, o palco pinta em vez de mover a vista.
   const [pincel, setPincel] = useState(null);
@@ -131,6 +133,7 @@ export default function Mesa() {
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
   const fecharJogadores = useCallback(() => setVendoJogadores(false), []);
   const fecharEntregas = useCallback(() => setEntregando(false), []);
+  const fecharResumo = useCallback(() => setResumindo(false), []);
   const podeDesfazer = tamanhoHistorico.idMesa === idMesa && tamanhoHistorico.n > 0;
   const listarRolagensDaMesa = useCallback(() => (idMesa ? listarRolagens(idMesa) : Promise.resolve([])), [idMesa]);
   const enviarRolagemDaMesa = useCallback((rolagem) => enviarRolagem(idMesa, rolagem), [idMesa]);
@@ -443,6 +446,8 @@ export default function Mesa() {
                 : <button type="button" className="btn btn-sm btn-fantasma" onClick={() => executar(() => ativarMesa(mesa.id))}>Tornar ativa</button>}
               <button type="button" className="btn btn-sm btn-fantasma" onClick={() => setEntregando(true)}
                 title="Entregue uma carta, um retrato ou um mapa (handout) aos jogadores">Entregar</button>
+              <button type="button" className="btn btn-sm btn-fantasma" onClick={() => setResumindo(true)}
+                title="Rascunho do resumo da sessão: combates, quedas, críticos e entregas">Resumo</button>
               <button type="button" className="btn btn-sm btn-fantasma" onClick={() => setVendoJogadores(true)}
                 title="Links de convite para os jogadores abrirem a mesa no navegador">Jogadores</button>
               <button type="button" className="btn btn-sm btn-primary"
@@ -565,6 +570,8 @@ export default function Mesa() {
             executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, { idImagemRegistro: idImagem })));
           }} />
       )}
+
+      {resumindo && mesa && <ResumoSessao idCampanha={id} idMesa={mesa.id} aoFechar={fecharResumo} />}
 
       {entregando && (
         <PainelEntregas idCampanha={id} registros={registros} imagens={imagens} urlImagem={urlDaImagem} aoFechar={fecharEntregas} />

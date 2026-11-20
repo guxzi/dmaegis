@@ -199,6 +199,7 @@ public class MesaService : IMesaService
     private readonly IImagemRegistroRepository _imagemRepository;
     private readonly ICampanhaService _campanhaService;
     private readonly ICanalMesa _canal;
+    private readonly IEventoMesaRepository _eventoRepository;
     private readonly ICelulaReveladaRepository _celulaRepository;
 
     public MesaService(
@@ -210,8 +211,10 @@ public class MesaService : IMesaService
         IImagemRegistroRepository imagemRepository,
         ICampanhaService campanhaService,
         ICanalMesa canal,
-        ICelulaReveladaRepository celulaRepository)
+        ICelulaReveladaRepository celulaRepository,
+        IEventoMesaRepository eventoRepository)
     {
+        _eventoRepository = eventoRepository;
         _mesaRepository = mesaRepository;
         _participanteRepository = participanteRepository;
         _condicaoRepository = condicaoRepository;
@@ -332,6 +335,7 @@ public class MesaService : IMesaService
     {
         var (participante, mesa) = await ObterParticipanteDoUsuarioOuLancarAsync(idUsuario, id);
 
+        var pvAntes = participante.PvAtual;
         participante.Nome = dados.Nome.Trim();
         participante.Iniciativa = dados.Iniciativa;
         participante.BonusIniciativa = dados.BonusIniciativa;
@@ -356,6 +360,9 @@ public class MesaService : IMesaService
             await _condicaoRepository.SubstituirAsync(participante.Id, condicoes);
             transacao.Complete();
         }
+        // Caiu agora (o PV chegou a zero): vai para o diário da mesa.
+        if (participante.PvMaximo.HasValue && pvAntes is > 0 && participante.PvAtual is <= 0)
+            await RegistrarAsync(mesa.Id, RegrasMesa.EventoCaiu, $"{participante.Nome} caiu.");
         return await AvisarEMontarAsync(mesa);
     }
 
@@ -395,8 +402,11 @@ public class MesaService : IMesaService
                 await _participanteRepository.AtualizarIniciativaAsync(item.IdParticipante, item.Iniciativa);
             }
 
-            var vez = RegrasMesa.PrimeiraVez(RegrasMesa.OrdenarIniciativa(participantes));
+            var ordem = RegrasMesa.OrdenarIniciativa(participantes);
+            var vez = RegrasMesa.PrimeiraVez(ordem);
             await _mesaRepository.AtualizarCombateAsync(idMesa, true, 1, vez);
+            var nomes = string.Join(", ", ordem.Where(p => p.Visivel).Select(p => p.Iniciativa.HasValue ? $"{p.Nome} ({p.Iniciativa})" : p.Nome));
+            await RegistrarAsync(idMesa, RegrasMesa.EventoCombateInicio, $"O combate começou. Ordem: {nomes}.");
             (mesa.EmCombate, mesa.Rodada, mesa.IdParticipanteVez) = (true, 1, vez);
             transacao.Complete();
         }
@@ -419,6 +429,9 @@ public class MesaService : IMesaService
     public async Task<MesaServiceModel> EncerrarCombateAsync(int idUsuario, int idMesa)
     {
         var mesa = await ObterMesaDoUsuarioOuLancarAsync(idUsuario, idMesa);
+        if (mesa.EmCombate)
+            await RegistrarAsync(idMesa, RegrasMesa.EventoCombateFim,
+                mesa.Rodada == 1 ? "O combate terminou na primeira rodada." : $"O combate terminou depois de {mesa.Rodada} rodadas.");
         await _mesaRepository.AtualizarCombateAsync(idMesa, false, 0, null);
         (mesa.EmCombate, mesa.Rodada, mesa.IdParticipanteVez) = (false, 0, null);
         return await AvisarEMontarAsync(mesa);
@@ -717,6 +730,10 @@ public class MesaService : IMesaService
             throw new BusinessRuleException(BusinessErrors.ParticipanteNaoEncontrado);
         }
     }
+
+    /// <summary>Uma linha no diário da mesa (para o resumo da sessão).</summary>
+    private Task RegistrarAsync(int idMesa, string tipo, string texto) =>
+        _eventoRepository.InserirAsync(new EventoMesa { IdMesa = idMesa, Tipo = tipo, Texto = texto.Length > 300 ? texto[..297] + "…" : texto, Data = Agora() });
 
     private static DateTime Agora()
     {

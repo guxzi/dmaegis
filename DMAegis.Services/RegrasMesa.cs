@@ -10,6 +10,30 @@ public static class RegrasMesa
     public const string Sangrando = "Sangrando";
     public const string Caido = "Caído";
 
+    public const string EventoCombateInicio = "combate-inicio";
+    public const string EventoCombateFim = "combate-fim";
+    public const string EventoCaiu = "caiu";
+
+    /// <summary>
+    /// Crítico ("critico") ou falha ("falha") de uma rolagem com um único d20 que conta (1d20, 2d20kh1, 2d20kl1, com bônus).
+    /// O detalhe vem do navegador: "1d20+5 → (20) + 5 = 25"; dado entre colchetes foi descartado. Igual ao efeitos.js do front.
+    /// </summary>
+    public static string? CriticoDaRolagem(string? expressao, string? detalhe)
+    {
+        var termos = System.Text.RegularExpressions.Regex.Matches((expressao ?? string.Empty).ToLowerInvariant(), @"(\d*)d(\d+)(k[hl](\d+))?");
+        if (termos.Count != 1 || termos[0].Groups[2].Value != "20")
+            return null;
+        var t = termos[0];
+        var contam = t.Groups[4].Success ? int.Parse(t.Groups[4].Value) : (t.Groups[1].Value.Length > 0 ? int.Parse(t.Groups[1].Value) : 1);
+        if (contam != 1)
+            return null;
+        var grupo = System.Text.RegularExpressions.Regex.Match(detalhe ?? string.Empty, @"\(([^)]*)\)");
+        if (!grupo.Success)
+            return null;
+        var mantido = grupo.Groups[1].Value.Split(',').Select(v => v.Trim()).FirstOrDefault(v => !v.StartsWith('['));
+        return mantido switch { "20" => "critico", "1" => "falha", _ => null };
+    }
+
     /// <summary>Climas que a mesa pode mostrar por cima do mapa (nulo = nenhum).</summary>
     public static readonly string[] Climas = ["chuva", "neve", "neblina", "brasas"];
 
