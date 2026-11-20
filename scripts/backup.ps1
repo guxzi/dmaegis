@@ -1,6 +1,13 @@
 ﻿# Backup do banco do DMAegis (campanhas, caderno, sessões, mesas e imagens) num arquivo .sql.
 # Lê a connection string do .env da raiz; a senha vai para o mysqldump pela variável MYSQL_PWD e nunca aparece na tela.
 # Uso: dois cliques em "Fazer backup do banco.cmd", ou: powershell -File scripts/backup.ps1
+# Ficam os backups mais recentes (8, ou o número em -Manter); os mais velhos são apagados.
+# -Silencioso é para o Agendador de Tarefas: sem mensagens na tela, e o resultado vai para "ultimo-backup.txt".
+
+param(
+    [int]$Manter = 8,
+    [switch]$Silencioso
+)
 
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path -Parent $PSScriptRoot
@@ -43,7 +50,21 @@ finally {
 }
 
 $tamanho = [Math]::Round((Get-Item $destino).Length / 1MB, 1)
-Write-Host ''
-Write-Host "  Backup salvo em: $destino ($tamanho MB)"
-Write-Host '  Para restaurar: mysql -u root -p < "caminho do arquivo .sql"'
-Write-Host ''
+
+# Apaga os backups mais velhos, mantendo os $Manter mais recentes.
+$apagados = 0
+if ($Manter -gt 0) {
+    $velhos = Get-ChildItem $pasta -Filter 'dmaegis-*.sql' | Sort-Object LastWriteTime -Descending | Select-Object -Skip $Manter
+    foreach ($velho in $velhos) { Remove-Item $velho.FullName; $apagados++ }
+}
+
+$resumo = "Backup salvo em: $destino ($tamanho MB)."
+if ($apagados -gt 0) { $resumo += " $apagados backup(s) antigo(s) apagado(s)." }
+Set-Content -Path (Join-Path $pasta 'ultimo-backup.txt') -Value "$(Get-Date -Format 'dd/MM/yyyy HH:mm') - $resumo" -Encoding utf8
+
+if (-not $Silencioso) {
+    Write-Host ''
+    Write-Host "  $resumo"
+    Write-Host '  Para restaurar: mysql -u root -p < "caminho do arquivo .sql"'
+    Write-Host ''
+}
