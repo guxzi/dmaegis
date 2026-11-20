@@ -131,6 +131,8 @@ public static class MesaMapper
             EstadoSaude = p.EstadoSaude,
             Condicoes = p.Condicoes,
             EhMinha = p.EhMinha,
+            Iniciativa = p.Iniciativa,
+            BonusIniciativa = p.BonusIniciativa,
         }).ToList(),
     };
 
@@ -142,6 +144,25 @@ public static class MesaMapper
         IdParticipante = request.IdParticipante,
         Emoji = request.Emoji,
         Origem = request.Origem,
+    };
+
+    public static InserirEntregaServiceModel ParaServiceModel(this InserirEntregaRequestApiModel request) => new()
+    {
+        Titulo = request.Titulo ?? string.Empty,
+        Texto = request.Texto,
+        IdImagemRegistro = request.IdImagemRegistro,
+        IdRegistroDestino = request.IdRegistroDestino,
+    };
+
+    public static EntregaResponseApiModel ParaResponse(this EntregaServiceModel e) => new()
+    {
+        Id = e.Id,
+        Titulo = e.Titulo,
+        Texto = e.Texto,
+        IdImagemRegistro = e.IdImagemRegistro,
+        IdRegistroDestino = e.IdRegistroDestino,
+        NomeDestino = e.NomeDestino,
+        Data = e.Data,
     };
 
     public static RolarServiceModel ParaServiceModel(this RolarRequestApiModel request) => new()

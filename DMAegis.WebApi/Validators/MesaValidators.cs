@@ -115,6 +115,16 @@ public class AlterarNevoaValidator : AbstractValidator<AlterarNevoaRequestApiMod
         c is not null && c.Coluna is >= 0 and <= RegrasMesaApi.PosicaoMaxima && c.Linha is >= 0 and <= RegrasMesaApi.PosicaoMaxima;
 }
 
+public class InserirEntregaValidator : AbstractValidator<InserirEntregaRequestApiModel>
+{
+    public InserirEntregaValidator()
+    {
+        RuleFor(x => x.Titulo).Must(t => !string.IsNullOrWhiteSpace(t)).WithMessage("Dê um título à entrega.");
+        RuleFor(x => x.Titulo).TamanhoAte(120, "O título");
+        RuleFor(x => x.Texto).TamanhoAte(4000, "O texto");
+    }
+}
+
 public class RolarValidator : AbstractValidator<RolarRequestApiModel>
 {
     public RolarValidator()

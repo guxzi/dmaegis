@@ -12,6 +12,14 @@ export const obterMesaDoJogador = () => apiJogador.get('/jogador/mesa').then(dad
 export const moverMinhaFicha = (coluna, linha) => apiJogador.put('/jogador/ficha/posicao', { coluna, linha }).then(dados);
 export const listarRolagensDoJogador = () => apiJogador.get('/jogador/rolagens').then(dados);
 export const enviarRolagemDoJogador = (rolagem) => apiJogador.post('/jogador/rolagens', rolagem).then(dados);
+export const rolarIniciativaDoJogador = (rolagem) => apiJogador.post('/jogador/iniciativa', rolagem).then(dados);
+export const listarEntregasDoJogador = () => apiJogador.get('/jogador/entregas').then(dados);
+// O retrato chega já reduzido pelo navegador (Blob JPEG).
+export function enviarRetrato(blob) {
+  const formulario = new FormData();
+  formulario.append('arquivo', blob, 'retrato.jpg');
+  return apiJogador.post('/jogador/retrato', formulario).then(dados);
+}
 export const enviarSinalDoJogador = (sinal) => apiJogador.post('/jogador/sinais', sinal).then(dados);
 export const urlImagemDoJogador = (id) => `/api/jogador/imagens/${id}`;
 export const URL_EVENTOS_JOGADOR = '/api/jogador/eventos';

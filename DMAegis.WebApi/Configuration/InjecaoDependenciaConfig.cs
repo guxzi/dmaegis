@@ -37,6 +37,7 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<IConviteJogadorRepository, ConviteJogadorRepository>();
         services.AddScoped<ICelulaReveladaRepository, CelulaReveladaRepository>();
         services.AddScoped<IRolagemMesaRepository, RolagemMesaRepository>();
+        services.AddScoped<IEntregaRepository, EntregaRepository>();
 
         // Services
         services.AddScoped<ISaudeService, SaudeService>();
@@ -48,6 +49,7 @@ public static class InjecaoDependenciaConfig
         services.AddScoped<IMesaService, MesaService>();
         services.AddScoped<IJogadorService, JogadorService>();
         services.AddScoped<IRolagemMesaService, RolagemMesaService>();
+        services.AddScoped<IEntregaService, EntregaService>();
         services.AddSingleton<ICanalMesa, CanalMesa>();
 
         // Validators (todos os AbstractValidator deste projeto)

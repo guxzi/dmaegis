@@ -48,6 +48,12 @@ public interface IJogadorService
     /// <summary>Só o mapa da mesa ativa e os retratos das fichas que o jogador vê.</summary>
     Task<(string TipoConteudo, byte[] Conteudo)> ObterImagemAsync(JogadorLogadoServiceModel jogador, int idImagem);
 
+    /// <summary>
+    /// O jogador envia o próprio retrato: vira a primeira imagem do registro do PJ (e, por isso, o retrato na mesa).
+    /// O retrato anterior enviado pelo jogador é trocado; as imagens que o mestre colocou ficam.
+    /// </summary>
+    Task EnviarRetratoAsync(JogadorLogadoServiceModel jogador, byte[] conteudo);
+
     /// <summary>Sinal passageiro do jogador: ping no mapa, reação ou o arrasto da própria ficha.</summary>
     Task SinalizarAsync(JogadorLogadoServiceModel jogador, SinalMesaServiceModel sinal);
 }
@@ -65,6 +71,10 @@ public class JogadorService : IJogadorService
     private readonly ICampanhaService _campanhaService;
     private readonly IMesaService _mesaService;
     private readonly ICanalMesa _canal;
+    private readonly IEntregaRepository _entregaRepository;
+
+    /// <summary>Título das imagens enviadas pelo jogador (é assim que o retrato antigo é achado para ser trocado).</summary>
+    public const string TituloRetratoDoJogador = "Retrato enviado pelo jogador";
 
     public JogadorService(
         IConviteJogadorRepository conviteRepository,
@@ -75,8 +85,10 @@ public class JogadorService : IJogadorService
         IRegistroService registroService,
         ICampanhaService campanhaService,
         IMesaService mesaService,
-        ICanalMesa canal)
+        ICanalMesa canal,
+        IEntregaRepository entregaRepository)
     {
+        _entregaRepository = entregaRepository;
         _conviteRepository = conviteRepository;
         _registroRepository = registroRepository;
         _campanhaRepository = campanhaRepository;
@@ -191,6 +203,39 @@ public class JogadorService : IJogadorService
         _canal.Avisar(jogador.IdCampanha);
     }
 
+    public async Task EnviarRetratoAsync(JogadorLogadoServiceModel jogador, byte[] conteudo)
+    {
+        await ConferirAcessoAsync(jogador);
+        if (conteudo.Length > ImagemService.TamanhoMaximo)
+            throw new BusinessRuleException(BusinessErrors.ImagemGrandeDemais);
+        var tipo = ImagemService.DetectarTipo(conteudo) ?? throw new BusinessRuleException(BusinessErrors.ImagemInvalida);
+
+        var existentes = (await _imagemRepository.ListarPorRegistroAsync(jogador.IdRegistro)).ToList();
+        using (var transacao = Transacao.Iniciar())
+        {
+            foreach (var antiga in existentes.Where(i => i.Titulo == TituloRetratoDoJogador))
+                await _imagemRepository.ExcluirAsync(antiga.Id);
+            var restantes = existentes.Where(i => i.Titulo != TituloRetratoDoJogador).ToList();
+            if (restantes.Count >= ImagemService.MaximoPorRegistro)
+                throw new BusinessRuleException(BusinessErrors.LimiteImagens);
+
+            // Ordem menor que todas: o retrato é a primeira imagem do registro.
+            var ordem = restantes.Count == 0 ? 0 : restantes.Min(i => i.Ordem) - 1;
+            await _imagemRepository.InserirAsync(new ImagemRegistro
+            {
+                IdRegistro = jogador.IdRegistro,
+                Titulo = TituloRetratoDoJogador,
+                TipoConteudo = tipo,
+                Tamanho = conteudo.Length,
+                Ordem = ordem,
+                DataCriacao = DateTime.Now,
+                Conteudo = conteudo,
+            });
+            transacao.Complete();
+        }
+        _canal.Avisar(jogador.IdCampanha);
+    }
+
     public async Task SinalizarAsync(JogadorLogadoServiceModel jogador, SinalMesaServiceModel sinal)
     {
         await ConferirAcessoAsync(jogador);
@@ -198,6 +243,9 @@ public class JogadorService : IJogadorService
                    ?? throw new BusinessRuleException(BusinessErrors.MesaNaoEncontrada);
         var minha = mesa.Participantes.FirstOrDefault(p => p.IdRegistro == jogador.IdRegistro && p.Visivel && p.Coluna.HasValue);
 
+        // Pedir iniciativa é coisa do mestre.
+        if (sinal.Tipo == RegrasMesa.SinalPedirIniciativa)
+            throw new BusinessRuleException((BusinessErrors.DadosInvalidos.Code, "Só o mestre pede iniciativa."));
         sinal.Autor = jogador.NomePersonagem;
         sinal.IdMesa = mesa.Id;
         sinal.Publico = true;
@@ -223,6 +271,9 @@ public class JogadorService : IJogadorService
         if (visao?.IdImagemRegistro is int mapa) permitidas.Add(mapa);
         foreach (var p in visao?.Participantes ?? [])
             if (p.IdImagemRetrato is int retrato) permitidas.Add(retrato);
+        // As imagens das entregas que o jogador recebeu (para todos ou só dele).
+        foreach (var entrega in await _entregaRepository.ListarDoJogadorAsync(jogador.IdCampanha, jogador.IdRegistro))
+            if (entrega.IdImagemRegistro is int imagem) permitidas.Add(imagem);
 
         if (!permitidas.Contains(idImagem))
             throw new BusinessRuleException(BusinessErrors.ImagemNaoEncontrada);

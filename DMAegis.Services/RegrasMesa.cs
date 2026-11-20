@@ -20,7 +20,8 @@ public static class RegrasMesa
     public const string SinalReacao = "reacao";
     public const string SinalArrasto = "arrasto";
     public const string SinalArrastoFim = "arrasto-fim";
-    public static readonly string[] TiposSinal = [SinalPing, SinalReacao, SinalArrasto, SinalArrastoFim];
+    public const string SinalPedirIniciativa = "pedir-iniciativa";
+    public static readonly string[] TiposSinal = [SinalPing, SinalReacao, SinalArrasto, SinalArrastoFim, SinalPedirIniciativa];
 
     /// <summary>
     /// Ordem do combate: iniciativa maior primeiro (sem iniciativa vai para o fim),

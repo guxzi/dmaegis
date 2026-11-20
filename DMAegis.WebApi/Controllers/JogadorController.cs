@@ -3,6 +3,8 @@ using DMAegis.WebApi.ApiModels;
 using DMAegis.WebApi.ApiModels.Mesas;
 using DMAegis.WebApi.Configuration;
 using DMAegis.WebApi.Mappers;
+using DMAegis.WebApi.Middlewares;
+using DMAegis.Services.Exceptions;
 using DMAegis.WebApi.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.Antiforgery;
@@ -28,12 +30,17 @@ public class JogadorController : ControllerBase
     private readonly IRolagemMesaService _rolagemService;
     private readonly IValidator<RolarRequestApiModel> _validatorRolar;
     private readonly IValidator<SinalMesaRequestApiModel> _validatorSinal;
+    private readonly IEntregaService _entregaService;
+
+    /// <summary>O retrato chega reduzido pelo navegador; 5 MB sobra.</summary>
+    public const int LimiteRetrato = 5 * 1024 * 1024;
 
     public JogadorController(IJogadorService jogadorService, ICanalMesa canal,
         IValidator<MoverMinhaFichaRequestApiModel> validatorMover, IAntiforgery antiforgery,
         IRolagemMesaService rolagemService, IValidator<RolarRequestApiModel> validatorRolar,
-        IValidator<SinalMesaRequestApiModel> validatorSinal)
+        IValidator<SinalMesaRequestApiModel> validatorSinal, IEntregaService entregaService)
     {
+        _entregaService = entregaService;
         _validatorSinal = validatorSinal;
         _rolagemService = rolagemService;
         _validatorRolar = validatorRolar;
@@ -134,6 +141,39 @@ public class JogadorController : ControllerBase
         await _validatorRolar.ValidarOuLancarAsync(request);
         var rolagem = await _rolagemService.RolarDoJogadorAsync(User.ObterJogador(), request.ParaServiceModel());
         return StatusCode(StatusCodes.Status201Created, ApiResponse<RolagemResponseApiModel>.Sucesso(rolagem.ParaResponse()));
+    }
+
+    [HttpPost("api/jogador/iniciativa")]
+    public async Task<ActionResult<ApiResponse<RolagemResponseApiModel>>> RolarIniciativa([FromBody] RolarRequestApiModel request)
+    {
+        await _validatorRolar.ValidarOuLancarAsync(request);
+        var rolagem = await _rolagemService.RolarIniciativaDoJogadorAsync(User.ObterJogador(), request.ParaServiceModel());
+        return StatusCode(StatusCodes.Status201Created, ApiResponse<RolagemResponseApiModel>.Sucesso(rolagem.ParaResponse()));
+    }
+
+    [HttpGet("api/jogador/entregas")]
+    public async Task<ActionResult<ApiResponse<List<EntregaResponseApiModel>>>> Entregas()
+    {
+        var entregas = await _entregaService.ListarDoJogadorAsync(User.ObterJogador());
+        return Ok(ApiResponse<List<EntregaResponseApiModel>>.Sucesso(entregas.Select(e => e.ParaResponse()).ToList()));
+    }
+
+    /// <summary>Upload multipart do retrato (campo "arquivo"), lido aqui dentro como no upload do mestre.</summary>
+    [HttpPost("api/jogador/retrato")]
+    [RequestSizeLimit(LimiteRetrato)]
+    [RequestFormLimits(MultipartBodyLengthLimit = LimiteRetrato)]
+    [SemLeituraDeFormulario]
+    public async Task<ActionResult<ApiResponse<object>>> EnviarRetrato()
+    {
+        if (!Request.HasFormContentType)
+            throw new BusinessRuleException((BusinessErrors.DadosInvalidos.Code, "Envie a imagem num formulário (multipart)."));
+        var formulario = await Request.ReadFormAsync();
+        var arquivo = formulario.Files.GetFile("arquivo")
+                      ?? throw new BusinessRuleException((BusinessErrors.DadosInvalidos.Code, "Escolha uma imagem."));
+        using var memoria = new MemoryStream();
+        await arquivo.CopyToAsync(memoria);
+        await _jogadorService.EnviarRetratoAsync(User.ObterJogador(), memoria.ToArray());
+        return Ok(ApiResponse<object>.Sucesso(null!));
     }
 
     [HttpPost("api/jogador/sinais")]

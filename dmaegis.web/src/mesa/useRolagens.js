@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const maiorId = (lista) => lista.reduce((maior, r) => Math.max(maior, r.id), 0);
 
-// As rolagens da mesa e as que acabaram de chegar (para o dado animado em cima do mapa).
-// A primeira busca só preenche a lista: rolagem antiga não aparece como nova ao abrir a tela.
+// Uma lista que chega do servidor (rolagens, entregas) e os itens que acabaram de chegar.
+// A primeira busca só preenche a lista: item antigo não aparece como novo ao abrir a tela.
 // `versao` muda a cada aviso da mesa, e aí a lista é buscada de novo.
-export function useRolagens(listar, versao) {
-  const [rolagens, setRolagens] = useState([]);
+export function useListaComNovas(listar, versao) {
+  const [itens, setItens] = useState([]);
   const [novas, setNovas] = useState([]);
   const vistas = useRef(null);
   const fonte = useRef(listar);
@@ -32,7 +32,7 @@ export function useRolagens(listar, versao) {
         vistas.current = Math.max(vistas.current, maiorId(lista));
         anunciar(chegaram);
       }
-      setRolagens(lista);
+      setItens(lista);
     }).catch(() => {});
     return () => {
       ativo = false;
@@ -41,7 +41,7 @@ export function useRolagens(listar, versao) {
 
   // A própria rolagem entra na hora, sem esperar o aviso da mesa.
   const adicionar = useCallback((nova) => {
-    setRolagens((lista) => [nova, ...lista.filter((r) => r.id !== nova.id)].slice(0, 30));
+    setItens((lista) => [nova, ...lista.filter((r) => r.id !== nova.id)].slice(0, 30));
     if (vistas.current === null || nova.id > vistas.current) {
       vistas.current = Math.max(vistas.current ?? 0, nova.id);
       anunciar([nova]);
@@ -50,5 +50,8 @@ export function useRolagens(listar, versao) {
 
   const dispensar = useCallback((id) => setNovas((atuais) => atuais.filter((r) => r.id !== id)), []);
 
-  return { rolagens, novas, adicionar, dispensar };
+  return { itens, novas, adicionar, dispensar };
 }
+
+// As rolagens da mesa e as que acabaram de chegar (para o dado animado em cima do mapa).
+export const useRolagens = useListaComNovas;

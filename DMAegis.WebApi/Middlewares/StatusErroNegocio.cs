@@ -24,6 +24,8 @@ public static class StatusErroNegocio
         [BusinessErrors.ConviteInvalido.Code] = StatusCodes.Status404NotFound,
         [BusinessErrors.AcessoJogadorExpirado.Code] = StatusCodes.Status401Unauthorized,
         [BusinessErrors.MovimentoBloqueado.Code] = StatusCodes.Status403Forbidden,
+        [BusinessErrors.EntregaNaoEncontrada.Code] = StatusCodes.Status404NotFound,
+        [BusinessErrors.IniciativaJaDefinida.Code] = StatusCodes.Status409Conflict,
     };
 
     public static int Obter(int code) =>

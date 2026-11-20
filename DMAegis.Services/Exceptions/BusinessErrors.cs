@@ -30,4 +30,6 @@ public static class BusinessErrors
     public static readonly (int Code, string DefaultMessage) MovimentoBloqueado = (22, "O mestre travou o movimento das fichas.");
     public static readonly (int Code, string DefaultMessage) FichaForaDaMesa = (23, "Sua ficha não está no mapa agora.");
     public static readonly (int Code, string DefaultMessage) SoJogadorTemConvite = (24, "Só personagens de jogador (PJ) recebem link.");
+    public static readonly (int Code, string DefaultMessage) EntregaNaoEncontrada = (25, "Entrega não encontrada.");
+    public static readonly (int Code, string DefaultMessage) IniciativaJaDefinida = (26, "Sua iniciativa já está na ordem do combate.");
 }

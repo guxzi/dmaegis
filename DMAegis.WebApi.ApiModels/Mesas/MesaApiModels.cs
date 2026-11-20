@@ -121,6 +121,8 @@ public class ParticipanteVisaoResponseApiModel
     public string? EstadoSaude { get; set; }
     public List<string> Condicoes { get; set; } = [];
     public bool EhMinha { get; set; }
+    public int? Iniciativa { get; set; }
+    public int? BonusIniciativa { get; set; }
 }
 
 public class VisaoJogadorResponseApiModel

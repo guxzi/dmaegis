@@ -124,6 +124,10 @@ public class ParticipanteVisaoServiceModel
     public string? EstadoSaude { get; set; }
     public List<string> Condicoes { get; set; } = [];
     public bool EhMinha { get; set; }
+
+    /// <summary>Só dos PJs (o jogador rola a própria iniciativa com o bônus).</summary>
+    public int? Iniciativa { get; set; }
+    public int? BonusIniciativa { get; set; }
 }
 
 public class VisaoJogadorServiceModel
@@ -468,6 +472,8 @@ public class MesaService : IMesaService
                 EstadoSaude = RegrasMesa.EstadoSaude(p.PvAtual, p.PvMaximo),
                 Condicoes = [.. p.Condicoes],
                 EhMinha = idRegistroJogador.HasValue && p.IdRegistro == idRegistroJogador,
+                Iniciativa = p.Jogador ? p.Iniciativa : null,
+                BonusIniciativa = p.Jogador ? p.BonusIniciativa : null,
             }).ToList(),
         };
     }

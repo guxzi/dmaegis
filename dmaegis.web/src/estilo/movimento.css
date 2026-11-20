@@ -167,6 +167,11 @@
   .dado-faiscas span { animation: faisca-critico 0.8s ease-out forwards; }
   .barra-reacoes { animation: surgir-leve 0.2s var(--dm-ease) backwards; }
   .ajuste-clima { animation: surgir-leve 0.25s var(--dm-ease) backwards; }
+  .revelar-entrega { animation: esmaecer 0.35s ease backwards; }
+  .cartao-entrega { animation: desdobrar-entrega 0.7s var(--dm-ease) backwards; }
+  .cartao-entrega > * { animation: surgir-leve 0.5s var(--dm-ease) 0.35s backwards; }
+  .janela-entregas { animation: surgir-leve 0.25s var(--dm-ease) backwards; }
+  .pedido-iniciativa { animation: pedido-surgir 0.5s var(--dm-ease) backwards, pedido-brilho 2.4s ease-in-out 0.5s infinite; }
 
   /* Clima: as camadas deslizam em velocidades diferentes (perto mais rápido que longe). */
   .clima-chuva .clima-perto { animation: chuva-cair 0.55s linear infinite; }
@@ -244,6 +249,17 @@
 }
 @keyframes faixa-surgir {
   from { opacity: 0; transform: translate(-50%, -10px); }
+}
+@keyframes desdobrar-entrega {
+  0% { opacity: 0; transform: perspective(900px) rotateX(-70deg) scale(0.85); filter: blur(6px); }
+  60% { opacity: 1; transform: perspective(900px) rotateX(8deg) scale(1.02); filter: blur(0); }
+  100% { transform: none; }
+}
+@keyframes pedido-surgir {
+  from { opacity: 0; transform: translate(-50%, -16px) scale(0.92); }
+}
+@keyframes pedido-brilho {
+  50% { box-shadow: 0 0 70px -4px rgba(var(--dm-violeta-rgb), 1); }
 }
 @keyframes faixa-atravessa {
   0% { opacity: 0; clip-path: inset(0 100% 0 0); }

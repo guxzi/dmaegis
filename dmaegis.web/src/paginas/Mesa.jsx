@@ -28,6 +28,7 @@ import { ID_TELA, ouvirMesa } from '../mesa/eventos.js';
 import RolagensNaMesa from '../mesa/RolagensNaMesa.jsx';
 import { useSinaisMesa } from '../mesa/useEfeitos.js';
 import { useRolagens } from '../mesa/useRolagens.js';
+import PainelEntregas from '../mesa/PainelEntregas.jsx';
 import PainelJogadores from '../mesa/PainelJogadores.jsx';
 import PainelRolagens from '../mesa/PainelRolagens.jsx';
 import { abrirProjecao, avisarMesaMudou, avisarSinalNaProjecao, mostrarMesaNaProjecao } from '../projecao/canal.js';
@@ -113,6 +114,8 @@ export default function Mesa() {
   const [renomeando, setRenomeando] = useState(false);
   const [vendoJogadores, setVendoJogadores] = useState(false);
   const [escolhendoClima, setEscolhendoClima] = useState(false);
+  const [entregando, setEntregando] = useState(false);
+  const [pediuIniciativa, setPediuIniciativa] = useState(false);
   // Com o painel da névoa aberto, o palco pinta em vez de mover a vista.
   const [pincel, setPincel] = useState(null);
   const [limitesGrade, setLimitesGrade] = useState(null);
@@ -127,6 +130,7 @@ export default function Mesa() {
   const idMesa = Number(parametros.get('mesa')) || mesas?.[0]?.id || null;
   const fecharExclusao = useCallback(() => setExcluindo(null), []);
   const fecharJogadores = useCallback(() => setVendoJogadores(false), []);
+  const fecharEntregas = useCallback(() => setEntregando(false), []);
   const podeDesfazer = tamanhoHistorico.idMesa === idMesa && tamanhoHistorico.n > 0;
   const listarRolagensDaMesa = useCallback(() => (idMesa ? listarRolagens(idMesa) : Promise.resolve([])), [idMesa]);
   const enviarRolagemDaMesa = useCallback((rolagem) => enviarRolagem(idMesa, rolagem), [idMesa]);
@@ -179,6 +183,19 @@ export default function Mesa() {
     avisarSinalNaProjecao(completo);
     enviarSinal(idMesa, sinal).catch(() => {});
   }, [idMesa, sinais]);
+
+  // Pede a iniciativa aos jogadores: aparece um cartão na tela deles, e o que rolarem entra na ficha.
+  const pedirIniciativa = useCallback(() => {
+    if (!idMesa) return;
+    enviarSinal(idMesa, { tipo: 'pedir-iniciativa', origem: ID_TELA }).catch(() => {});
+    setPediuIniciativa(true);
+  }, [idMesa]);
+
+  useEffect(() => {
+    if (!pediuIniciativa) return undefined;
+    const t = setTimeout(() => setPediuIniciativa(false), 2500);
+    return () => clearTimeout(t);
+  }, [pediuIniciativa]);
 
   // Arrasto ao vivo: no máximo ~11 avisos por segundo; ao soltar, avisa a célula final na hora.
   const envioArrasto = useMemo(() => limitarTaxa((sinal, publico) => {
@@ -424,6 +441,8 @@ export default function Mesa() {
               {mesa.ativa
                 ? <span className="selo-ativa" title="É a mesa que os jogadores veem">◉ Ativa</span>
                 : <button type="button" className="btn btn-sm btn-fantasma" onClick={() => executar(() => ativarMesa(mesa.id))}>Tornar ativa</button>}
+              <button type="button" className="btn btn-sm btn-fantasma" onClick={() => setEntregando(true)}
+                title="Entregue uma carta, um retrato ou um mapa (handout) aos jogadores">Entregar</button>
               <button type="button" className="btn btn-sm btn-fantasma" onClick={() => setVendoJogadores(true)}
                 title="Links de convite para os jogadores abrirem a mesa no navegador">Jogadores</button>
               <button type="button" className="btn btn-sm btn-primary"
@@ -498,11 +517,17 @@ export default function Mesa() {
                         onClick={() => executar(() => encerrarCombate(mesa.id))}>Encerrar</button>
                     </>
                   ) : (
+                    <>
+                    <button type="button" className="btn btn-sm btn-fantasma" disabled={!mesa.ativa || pediuIniciativa}
+                      onClick={pedirIniciativa} title={mesa.ativa ? 'Os jogadores rolam a iniciativa na tela deles' : 'Só na mesa ativa'}>
+                      {pediuIniciativa ? 'Pedido!' : 'Pedir iniciativa'}
+                    </button>
                     <button type="button" className="btn btn-sm btn-primary" disabled={ocupado || mesa.participantes.length === 0}
                       onClick={() => executar(() => iniciarCombate(mesa.id, iniciativasParaComecar(mesa.participantes)))}
                       title="Monstros e NPCs rolam d20 + bônus; digite a iniciativa dos PJs">
                       ⚔ Iniciar combate
                     </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -521,7 +546,7 @@ export default function Mesa() {
 
                 <div className="divisor-estelar my-3" />
                 <p className="rotulo-painel">Rolagens da mesa</p>
-                <PainelRolagens key={mesa.id} comSecreta rolagens={rolagens.rolagens}
+                <PainelRolagens key={mesa.id} comSecreta rolagens={rolagens.itens}
                   enviar={enviarRolagemDaMesa} aoEnviada={rolagens.adicionar} />
 
                 <div className="divisor-estelar my-3" />
@@ -539,6 +564,10 @@ export default function Mesa() {
             setEscolhendoMapa(false);
             executar(() => salvarMesa(mesa.id, corpoDaMesa(mesa, { idImagemRegistro: idImagem })));
           }} />
+      )}
+
+      {entregando && (
+        <PainelEntregas idCampanha={id} registros={registros} imagens={imagens} urlImagem={urlDaImagem} aoFechar={fecharEntregas} />
       )}
 
       {vendoJogadores && mesa && (

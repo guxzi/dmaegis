@@ -42,6 +42,26 @@ public class RolarRequestApiModel
     public bool Secreta { get; set; }
 }
 
+/// <summary>Entrega aos jogadores (handout): texto e/ou imagem da galeria; destino nulo = todos.</summary>
+public class InserirEntregaRequestApiModel
+{
+    public string Titulo { get; set; } = string.Empty;
+    public string? Texto { get; set; }
+    public int? IdImagemRegistro { get; set; }
+    public int? IdRegistroDestino { get; set; }
+}
+
+public class EntregaResponseApiModel
+{
+    public int Id { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public string? Texto { get; set; }
+    public int? IdImagemRegistro { get; set; }
+    public int? IdRegistroDestino { get; set; }
+    public string? NomeDestino { get; set; }
+    public DateTime Data { get; set; }
+}
+
 public class RolagemResponseApiModel
 {
     public int Id { get; set; }

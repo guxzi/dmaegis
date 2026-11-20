@@ -13,6 +13,7 @@ public class RolagemMesaServiceTests
     private readonly Mock<ICampanhaService> _campanhas = new();
     private readonly Mock<IJogadorService> _jogadores = new();
     private readonly Mock<ICanalMesa> _canal = new();
+    private readonly Mock<IParticipanteMesaRepository> _participantes = new();
     private readonly JogadorLogadoServiceModel _lilica = new() { IdCampanha = 10, IdRegistro = 100, NomePersonagem = "Lilica Lovejoy" };
 
     public RolagemMesaServiceTests()
@@ -24,7 +25,7 @@ public class RolagemMesaServiceTests
         _mesas.Setup(m => m.ObterAtivaAsync(10)).ReturnsAsync(new Mesa { Id = 5, IdCampanha = 10 });
     }
 
-    private RolagemMesaService CriarService() => new(_rolagens.Object, _mesas.Object, _campanhas.Object, _jogadores.Object, _canal.Object);
+    private RolagemMesaService CriarService() => new(_rolagens.Object, _mesas.Object, _campanhas.Object, _jogadores.Object, _canal.Object, _participantes.Object);
 
     private static readonly RolarServiceModel D20 = new() { Expressao = "1d20+5", Total = 19, Detalhe = "1d20+5 → (14) + 5 = 19" };
 
@@ -76,5 +77,30 @@ public class RolagemMesaServiceTests
     {
         _mesas.Setup(m => m.ObterAtivaAsync(10)).ReturnsAsync((Mesa?)null);
         Assert.Empty(await CriarService().ListarDoJogadorAsync(_lilica));
+    }
+
+    [Fact]
+    public async Task RolarIniciativaDoJogadorAsync_GravaNaFicha_ENaoDeixaRolarDeNovoNoCombate()
+    {
+        _participantes.Setup(p => p.ListarPorMesaAsync(5)).ReturnsAsync(
+        [
+            new ParticipanteMesa { Id = 1, IdMesa = 5, IdRegistro = 100, Jogador = true, Visivel = true },
+            new ParticipanteMesa { Id = 2, IdMesa = 5, IdRegistro = 101, Visivel = true },
+        ]);
+        RolagemMesa? gravada = null;
+        _rolagens.Setup(r => r.InserirAsync(It.IsAny<RolagemMesa>())).Callback<RolagemMesa>(r => gravada = r).ReturnsAsync(9);
+
+        var rolagem = await CriarService().RolarIniciativaDoJogadorAsync(_lilica, new RolarServiceModel { Expressao = "1d20+2", Total = 17, Detalhe = "1d20+2 → (15) + 2 = 17" });
+
+        _participantes.Verify(p => p.AtualizarIniciativaAsync(1, 17), Times.Once);
+        Assert.Equal("1d20+2 (iniciativa)", gravada!.Expressao);
+        Assert.False(rolagem.Secreta);
+
+        _mesas.Setup(m => m.ObterAtivaAsync(10)).ReturnsAsync(new Mesa { Id = 5, IdCampanha = 10, EmCombate = true });
+        _participantes.Setup(p => p.ListarPorMesaAsync(5)).ReturnsAsync(
+            [new ParticipanteMesa { Id = 1, IdMesa = 5, IdRegistro = 100, Jogador = true, Visivel = true, Iniciativa = 17 }]);
+        var erro = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            CriarService().RolarIniciativaDoJogadorAsync(_lilica, new RolarServiceModel { Expressao = "1d20", Total = 3, Detalhe = "1d20 → (3) = 3" }));
+        Assert.Equal(BusinessErrors.IniciativaJaDefinida.Code, erro.Code);
     }
 }

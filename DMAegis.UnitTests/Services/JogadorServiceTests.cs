@@ -17,6 +17,7 @@ public class JogadorServiceTests
     private readonly Mock<ICampanhaService> _campanhas = new();
     private readonly Mock<IMesaService> _mesas = new();
     private readonly Mock<ICanalMesa> _canal = new();
+    private readonly Mock<IEntregaRepository> _entregas = new();
 
     private const string Codigo = "codigo-de-teste-bem-comprido-0123456789abc";
     private static readonly string Hash = JogadorService.HashDoCodigo(Codigo);
@@ -32,7 +33,7 @@ public class JogadorServiceTests
     }
 
     private JogadorService CriarService() => new(_convites.Object, _registros.Object, _campanhasRepo.Object, _participantes.Object,
-        _imagens.Object, _registroService.Object, _campanhas.Object, _mesas.Object, _canal.Object);
+        _imagens.Object, _registroService.Object, _campanhas.Object, _mesas.Object, _canal.Object, _entregas.Object);
 
     private static async Task<int> CodigoAsync(Func<Task> acao) =>
         (await Assert.ThrowsAsync<BusinessRuleException>(acao)).Code;
@@ -214,5 +215,45 @@ public class JogadorServiceTests
         MesaAtiva(movimentoLivre: false);
         Assert.Equal(BusinessErrors.MovimentoBloqueado.Code,
             await CodigoAsync(() => CriarService().SinalizarAsync(lilica, new SinalMesaServiceModel { Tipo = "arrasto", Coluna = 1, Linha = 1 })));
+    }
+
+    [Fact]
+    public async Task ObterImagemAsync_ImagemDeUmaEntregaDoJogador_EPermitida()
+    {
+        MesaAtiva();
+        _entregas.Setup(e => e.ListarDoJogadorAsync(10, 100)).ReturnsAsync([new Entrega { Id = 1, IdCampanha = 10, Titulo = "Carta", IdImagemRegistro = 500 }]);
+        _imagens.Setup(i => i.ObterConteudoAsync(500)).ReturnsAsync(("image/png", new byte[] { 1 }));
+
+        Assert.Equal("image/png", (await CriarService().ObterImagemAsync(_lilica, 500)).TipoConteudo);
+    }
+
+    [Fact]
+    public async Task EnviarRetratoAsync_TrocaORetratoAnteriorDoJogador_EFicaComoPrimeiraImagem()
+    {
+        var png = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0 };
+        _imagens.Setup(i => i.ListarPorRegistroAsync(100)).ReturnsAsync(
+        [
+            new ImagemRegistro { Id = 300, IdRegistro = 100, Titulo = "Do mestre", Ordem = 1 },
+            new ImagemRegistro { Id = 301, IdRegistro = 100, Titulo = JogadorService.TituloRetratoDoJogador, Ordem = 0 },
+        ]);
+        ImagemRegistro? nova = null;
+        _imagens.Setup(i => i.InserirAsync(It.IsAny<ImagemRegistro>())).Callback<ImagemRegistro>(i => nova = i).ReturnsAsync(302);
+
+        await CriarService().EnviarRetratoAsync(_lilica, png);
+
+        _imagens.Verify(i => i.ExcluirAsync(301), Times.Once);
+        _imagens.Verify(i => i.ExcluirAsync(300), Times.Never);
+        Assert.Equal((0, "image/png", 100), (nova!.Ordem, nova.TipoConteudo, nova.IdRegistro));
+        _canal.Verify(c => c.Avisar(10), Times.Once);
+
+        Assert.Equal(BusinessErrors.ImagemInvalida.Code, await CodigoAsync(() => CriarService().EnviarRetratoAsync(_lilica, [1, 2, 3])));
+    }
+
+    [Fact]
+    public async Task SinalizarAsync_JogadorNaoPedeIniciativa()
+    {
+        MesaAtiva();
+        Assert.Equal(BusinessErrors.DadosInvalidos.Code,
+            await CodigoAsync(() => CriarService().SinalizarAsync(_lilica, new SinalMesaServiceModel { Tipo = "pedir-iniciativa" })));
     }
 }

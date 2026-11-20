@@ -34,6 +34,9 @@ public interface IRolagemMesaService
     /// <summary>As rolagens da mesa ativa, sem as secretas. Sem mesa ativa, lista vazia.</summary>
     Task<IEnumerable<RolagemServiceModel>> ListarDoJogadorAsync(JogadorLogadoServiceModel jogador);
     Task<RolagemServiceModel> RolarDoJogadorAsync(JogadorLogadoServiceModel jogador, RolarServiceModel dados);
+
+    /// <summary>O jogador rola a iniciativa: vira a iniciativa da ficha dele e aparece nas rolagens da mesa.</summary>
+    Task<RolagemServiceModel> RolarIniciativaDoJogadorAsync(JogadorLogadoServiceModel jogador, RolarServiceModel dados);
 }
 
 /// <summary>
@@ -50,10 +53,13 @@ public class RolagemMesaService : IRolagemMesaService
     private readonly ICampanhaService _campanhaService;
     private readonly IJogadorService _jogadorService;
     private readonly ICanalMesa _canal;
+    private readonly IParticipanteMesaRepository _participanteRepository;
 
     public RolagemMesaService(IRolagemMesaRepository rolagemRepository, IMesaRepository mesaRepository,
-        ICampanhaService campanhaService, IJogadorService jogadorService, ICanalMesa canal)
+        ICampanhaService campanhaService, IJogadorService jogadorService, ICanalMesa canal,
+        IParticipanteMesaRepository participanteRepository)
     {
+        _participanteRepository = participanteRepository;
         _rolagemRepository = rolagemRepository;
         _mesaRepository = mesaRepository;
         _campanhaService = campanhaService;
@@ -88,6 +94,24 @@ public class RolagemMesaService : IRolagemMesaService
         var mesa = await _mesaRepository.ObterAtivaAsync(jogador.IdCampanha)
                    ?? throw new BusinessRuleException(BusinessErrors.MesaNaoEncontrada);
         // Jogador nunca rola em segredo: a rolagem dele aparece para todos.
+        return await GravarAsync(mesa, jogador.NomePersonagem, mestre: false, dados, secreta: false);
+    }
+
+    public async Task<RolagemServiceModel> RolarIniciativaDoJogadorAsync(JogadorLogadoServiceModel jogador, RolarServiceModel dados)
+    {
+        await _jogadorService.ConferirAcessoAsync(jogador);
+        var mesa = await _mesaRepository.ObterAtivaAsync(jogador.IdCampanha)
+                   ?? throw new BusinessRuleException(BusinessErrors.MesaNaoEncontrada);
+        var minha = (await _participanteRepository.ListarPorMesaAsync(mesa.Id))
+                    .FirstOrDefault(p => p.IdRegistro == jogador.IdRegistro && p.Visivel)
+                    ?? throw new BusinessRuleException(BusinessErrors.FichaForaDaMesa);
+        // Fora do combate pode rolar de novo; com o combate andando, só quem ainda não tem iniciativa.
+        if (mesa.EmCombate && minha.Iniciativa.HasValue)
+            throw new BusinessRuleException(BusinessErrors.IniciativaJaDefinida);
+
+        await _participanteRepository.AtualizarIniciativaAsync(minha.Id, dados.Total);
+        var expressao = dados.Expressao.Trim();
+        dados.Expressao = expressao.Length > 186 ? expressao[..186] : $"{expressao} (iniciativa)";
         return await GravarAsync(mesa, jogador.NomePersonagem, mestre: false, dados, secreta: false);
     }
 
