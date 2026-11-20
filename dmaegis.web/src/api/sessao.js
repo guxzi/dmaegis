@@ -14,3 +14,11 @@ export function criarTratadorDe401(aoExpirar) {
     return Promise.reject(erro);
   };
 }
+
+// O servidor não respondeu (API fora do ar, rede caiu) ou deu erro interno: vale tentar de novo.
+// Um 401 é diferente: a sessão não vale mais, e aí o certo é ir para o login.
+export function semConexao(erro) {
+  if (!erro) return false;
+  const status = erro.response?.status;
+  return status === undefined || status >= 500;
+}

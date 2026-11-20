@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest';
-import { criarTratadorDe401 } from './sessao.js';
+import { criarTratadorDe401, semConexao } from './sessao.js';
 
 const erro = (status, url) => ({ response: { status }, config: { url } });
 
@@ -31,4 +31,13 @@ test('se renovar a sessão falhar, o erro original ainda é repassado', async ()
   const aoExpirar = vi.fn().mockRejectedValue(new Error('rede'));
   const e = erro(401, '/campanhas');
   await expect(criarTratadorDe401(aoExpirar)(e)).rejects.toBe(e);
+});
+
+test('sem resposta ou erro 5xx é falta de conexão; 401 e 404 não são', () => {
+  expect(semConexao({ message: 'Network Error' })).toBe(true);
+  expect(semConexao({ response: { status: 502 } })).toBe(true);
+  expect(semConexao({ response: { status: 500 } })).toBe(true);
+  expect(semConexao({ response: { status: 401 } })).toBe(false);
+  expect(semConexao({ response: { status: 404 } })).toBe(false);
+  expect(semConexao(null)).toBe(false);
 });

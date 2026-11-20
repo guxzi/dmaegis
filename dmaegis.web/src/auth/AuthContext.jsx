@@ -1,26 +1,47 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as auth from '../api/auth.js';
 import { api } from '../api/cliente.js';
-import { criarTratadorDe401 } from '../api/sessao.js';
+import { criarTratadorDe401, semConexao } from '../api/sessao.js';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [carregando, setCarregando] = useState(true);
+  const [reconectando, setReconectando] = useState(false);
 
   // Ao abrir o app: primeiro descobre se a sessão vale (o /eu pode encerrá-la),
   // depois pega o token CSRF, que é ligado ao usuário. Nessa ordem, o token sempre
-  // corresponde à sessão que sobrou.
+  // corresponde à sessão que sobrou. Se a API estiver fora do ar, tenta de novo a cada
+  // 3 segundos em vez de mandar para o login (a sessão pode muito bem continuar valendo).
   useEffect(() => {
-    auth
-      .obterUsuarioAtual()
-      .then(async (atual) => {
+    let ativo = true;
+    let espera = null;
+    async function verificar() {
+      try {
+        const atual = await auth.obterUsuarioAtual();
         await auth.renovarCsrf();
+        if (!ativo) return;
         setUsuario(atual);
-      })
-      .catch(() => setUsuario(null))
-      .finally(() => setCarregando(false));
+        setReconectando(false);
+        setCarregando(false);
+      } catch (erro) {
+        if (!ativo) return;
+        if (semConexao(erro)) {
+          setReconectando(true);
+          espera = setTimeout(verificar, 3000);
+        } else {
+          setUsuario(null);
+          setReconectando(false);
+          setCarregando(false);
+        }
+      }
+    }
+    verificar();
+    return () => {
+      ativo = false;
+      clearTimeout(espera);
+    };
   }, []);
 
   // Sessão expirada no meio do uso: qualquer 401 fora das rotas de auth renova o token
@@ -42,8 +63,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const valor = useMemo(
-    () => ({ usuario, carregando, entrar, cadastrar, sair }),
-    [usuario, carregando, entrar, cadastrar, sair],
+    () => ({ usuario, carregando, reconectando, entrar, cadastrar, sair }),
+    [usuario, carregando, reconectando, entrar, cadastrar, sair],
   );
 
   return <AuthContext.Provider value={valor}>{children}</AuthContext.Provider>;
