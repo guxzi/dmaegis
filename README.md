@@ -63,7 +63,9 @@ Precisa do [.NET 10 SDK](https://dotnet.microsoft.com/download), do [Node.js](ht
    npm --prefix dmaegis.web install
    ```
 
-4. No Windows, dê dois cliques em `Abrir DMAegis.cmd`, que sobe a API e o site e abre o navegador. Se preferir subir na mão, use dois terminais:
+4. No Windows, dê dois cliques em `Criar atalhos do DMAegis.cmd` uma vez. Ele põe o atalho "DMAegis", com o ícone do escudo, na área de trabalho e no menu Iniciar. Dois cliques no atalho abrem o DMAegis numa janela própria, como um aplicativo, sem nenhum terminal: o servidor sobe escondido (na primeira vez, ou quando algo mudou, ele também prepara o site) e desliga sozinho quando a janela é fechada. Na primeira vez, entre com o seu usuário nessa janela; ela lembra depois. Se o servidor ficar ligado por algum motivo, use "Fechar DMAegis", no menu Iniciar.
+
+   Para mexer no código, `Abrir DMAegis (desenvolvimento).cmd` sobe a API e o site com recarga ao salvar, em duas janelas. Ou na mão, em dois terminais:
 
    ```bash
    dotnet run --project DMAegis.WebApi
@@ -73,7 +75,7 @@ Precisa do [.NET 10 SDK](https://dotnet.microsoft.com/download), do [Node.js](ht
    npm --prefix dmaegis.web run dev
    ```
 
-   O site abre em http://localhost:5173 e a API em http://localhost:5080.
+   Nesse modo o site abre em http://localhost:5173 e a API em http://localhost:5080.
 
 ## Jogar com os amigos pela internet
 
@@ -85,7 +87,7 @@ O DMAegis roda no meu PC. Para os jogadores abrirem a mesa de casa, uso um túne
    winget install --id Cloudflare.cloudflared
    ```
 
-2. Feche a janela "DMAegis API", se estiver aberta, e dê dois cliques em `Abrir mesa para os jogadores.cmd`. Ele compila o site, sobe a API em modo mesa (sem Swagger e com cookies seguros) e mostra um endereço como `https://alguma-coisa.trycloudflare.com`.
+2. Feche o DMAegis, se estiver aberto, e dê dois cliques em `Abrir mesa para os jogadores.cmd`. Ele compila o site, sobe a API em modo mesa (sem Swagger e com cookies seguros) e mostra um endereço como `https://alguma-coisa.trycloudflare.com`.
 3. Abra esse endereço no navegador e entre como mestre.
 4. Na página Mesa, clique em Jogadores, cole o endereço e gere o link de cada PJ. Mande cada link para o jogador do personagem.
 
