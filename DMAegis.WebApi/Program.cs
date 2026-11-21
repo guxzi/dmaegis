@@ -64,7 +64,9 @@ if (Environment.GetEnvironmentVariable("DMAEGIS_SERVIR_SITE") == "1")
         app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = arquivos });
         app.UseStaticFiles(new StaticFileOptions { FileProvider = arquivos });
         // Rotas do React (/jogar, /convite/…) voltam o index.html; as da API continuam com 404 no envelope.
-        app.MapFallbackToFile("{*caminho:regex(^(?!api/).*$)}", "index.html", new StaticFileOptions { FileProvider = arquivos });
+        // "nonfile" deixa de fora endereços de arquivo (/assets/x.js): se a rota pegasse esses também,
+        // ela venceria os arquivos estáticos e o navegador receberia HTML no lugar do JavaScript.
+        app.MapFallbackToFile("{*caminho:regex(^(?!api/).*$):nonfile}", "index.html", new StaticFileOptions { FileProvider = arquivos });
     }
     else
     {
